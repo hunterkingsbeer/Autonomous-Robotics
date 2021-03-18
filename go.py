@@ -23,8 +23,9 @@ from ev3dev2.motor import LargeMotor, OUTPUT_B, OUTPUT_C, SpeedPercent, MoveTank
 from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor, TouchSensor
 from ev3dev2.sound import Sound
 
-# Initialize dictionaries
+import math
 
+# Initialize dictionaries
 deltaTiles = {  # Orientations to delta tile positions. Usage would be tile+=deltaTiles[orientation]
     0: -15,
     90: 1,
@@ -38,9 +39,9 @@ keyTiles = {
 }
 
 # Initialize objects and constants. Nothing in here should cause the robot to move.
-
 ULTRASONICTRUEMAX = 255.0  # Highest possible distance the ultrasonic can detect.
 TURN90 = 48.555  # Motor value for 90 degree turn. Matt's solution.
+TURN90ROTATIONS = 0 # ninetyDegreeTurnRotations???????? huh????
 
 sound = Sound()
 mLeft = LargeMotor(OUTPUT_B)
@@ -52,10 +53,44 @@ sTouch = TouchSensor()
 steering_drive = MoveSteering(OUTPUT_B, OUTPUT_C)
 tank_drive = MoveTank(OUTPUT_B, OUTPUT_C)
 
+# Initialize common public variables
+
+squareCurrent = 0 #currentSquare
+squareLength = 0
+squareXdis = 0 #bSquareXdis
+squareYdis = 0 #bSquareYdis
+squaresX = 0 #xSquares
+squaresY = 0 #ySquares
+
+orientation = 0
+goal = False
 
 # Define functions
 
+# Kane functions, jackified
+
+# Returns angle.
+def calcAngle(rotations):
+    ratio = rotations / TURN90ROTATIONS
+    angle = 90*ratio
+    return angle
+
+# Returns both.
+def towerDistance(theta, hypotenuse):
+    x = hypotenuse * math.cos(theta)
+    horizontal = x/(squareXdis+squareLength)
+
+    y = hypotenuse * math.sin(theta)
+    vertical = y/(squareYdis+squareLength)
+
+    return horizontal, vertical
+
+
+# Jack functions
+
 def turnClockwise(orientation):
+    # Takes orientation to understand where it currently is, return orientation for where it ends up
+    # Usage:
     announce("Current orientation: " + str(orientation))
 
     orientation += 90
@@ -72,7 +107,7 @@ def turnCounterclockwise(orientation):
 
     orientation -= 90
     if orientation < 0:
-        orientation = orientation * -1
+        orientation = 360-orientation
     orientation = orientation % 360
 
     steering_drive.on_for_rotations(-TURN90, SpeedPercent(50), 1)  # TODO FIX
@@ -150,9 +185,6 @@ def color(): # Alias calling colour sensor. Wish it was sColour.colour, but y'kn
 """
 EVENT LOOP
 """
-
-orientation = 0
-goal = False
 
 while goal is False:
 
