@@ -13,7 +13,7 @@
 # TODO: Calibration, Colour sensing (in more detail), generally the whole assignment lmao
 # TODO: Fix orientation
 
-SIMULATOR = True
+SIMULATOR = False
 
 # Imports
 
@@ -179,6 +179,7 @@ def goTillTouch(): # Experimental and hopefully functional!
 
 
 def ultrasonic(): # Alias that calls the ultrasonic sensor. This function exists so we can change it later.
+    sleep(0.125)
     n = sSonic.distance_centimeters # Supposedly, the ultrasonic sensor locks up when checked more than 1/100ms
     return n
 
@@ -204,28 +205,24 @@ def rotateDegreesLeft(degrees):
 
 towerFound = False
 searchDegrees = 0
-searchRotationAmount = 3
+searchRotationAmount = 1
 
 
 orientation = turnClockwise(orientation)
-while towerFound is False:
-    for index in range(89):
+
+
+for index in range(89):
+    if towerFound is False:
         rotateDegreesRight(searchRotationAmount)  # turn 1 degree at a time, for 90 degrees
         searchDegrees += searchRotationAmount  # increment the searchDegrees +1
-        if ultrasonic() < 100:  # if ultrasonic returns less than 100cm, tower has been found
-            # announce("Found it, wow im so happy")
-            halt()
+        testSonic = ultrasonic()
+        if testSonic < 100:  # if ultrasonic returns less than 100cm, tower has been found
+            announce("FOUND"+str(testSonic))
             towerFound = True
-            break
-        if towerFound:
-            break
-    if towerFound:
-        break
+#
 
 if towerFound is True:
     rotateDegreesLeft(searchDegrees)  # rotate the degrees back into position
-
-
 
 
 
@@ -240,14 +237,9 @@ while goal is False:
     # sleep(1)
     # orientation = turnCounterclockwise(orientation)
     # sleep(2)f
-    # announce("Key order G")ffffffffgfgffffffffffffffff
-    # sleep(0.2)f
+    # announce("Key order G")ffffffff fffffffffffffsf
+    # sleep(0.2)ff
     # announce(str(sColor.color))
-
-
-
-    
-
 
     announce("Ultrasonic is" + str(ultrasonic()))
     motorSpeed(25)
