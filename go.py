@@ -13,7 +13,7 @@
 # TODO: Calibration, Colour sensing (in more detail), generally the whole assignment lmao
 # TODO: Fix orientation
 
-SIMULATOR = True
+SIMULATOR = False
 
 # Imports
 
@@ -84,6 +84,11 @@ def towerDistance(theta, hypotenuse):
     vertical = y/(squareYdis+squareLength)
 
     return horizontal, vertical
+
+# Hunter functions
+
+def turnClockwiseRotations():
+    mLeft.on_for_rotations(SpeedPercent(25), 50)
 
 
 # Jack functions
@@ -174,6 +179,7 @@ def goTillTouch(): # Experimental and hopefully functional!
 
 
 def ultrasonic(): # Alias that calls the ultrasonic sensor. This function exists so we can change it later.
+    sleep(0.125)
     n = sSonic.distance_centimeters # Supposedly, the ultrasonic sensor locks up when checked more than 1/100ms
     return n
 
@@ -186,18 +192,53 @@ def color(): # Alias calling colour sensor. Wish it was sColour.colour, but y'kn
 EVENT LOOP
 """
 
+def rotateDegreesRight(degrees):
+    amount = 0.94/90
+    mLeft.on_for_rotations(SpeedPercent(3), amount*degrees)
+
+def rotateDegreesLeft(degrees):
+    amount = 0.94/90
+    mRight.on_for_rotations(SpeedPercent(3), amount*degrees)
+
+# rotate 90, slow 90 degree scanning distance
+# when ultrasonic scanner hits, report distance, go back to initial
+
+towerFound = False
+searchDegrees = 0
+searchRotationAmount = 1
+
+
+orientation = turnClockwise(orientation)
+
+
+for index in range(89):
+    if towerFound is False:
+        rotateDegreesRight(searchRotationAmount)  # turn 1 degree at a time, for 90 degrees
+        searchDegrees += searchRotationAmount  # increment the searchDegrees +1
+        testSonic = ultrasonic()
+        if testSonic < 100:  # if ultrasonic returns less than 100cm, tower has been found
+            announce("FOUND"+str(testSonic))
+            towerFound = True
+#
+
+if towerFound is True:
+    rotateDegreesLeft(searchDegrees)  # rotate the degrees back into position
+
+
+
+"""
 while goal is False:
 
     # tank_drive.on(25, 25)
     # sleep(1)
     # orientation = turnClockwise(orientation)
-    # sleep(2)
+    # sleep(2)fff
     # tank_drive.on(25, 25)
     # sleep(1)
     # orientation = turnCounterclockwise(orientation)
-    # sleep(2)
-    # announce("Key order G")
-    # sleep(0.2)
+    # sleep(2)f
+    # announce("Key order G")ffffffff fffffffffffffsf
+    # sleep(0.2)ff
     # announce(str(sColor.color))
 
     announce("Ultrasonic is" + str(ultrasonic()))
@@ -210,8 +251,9 @@ while goal is False:
             sleep(1)
             announce("Ultrasonic is" + str(ultrasonic()))
     goal = True
-
+ 
 if goal is True:
     announce("Goal")
 else:
     announce("No goal")
+"""
