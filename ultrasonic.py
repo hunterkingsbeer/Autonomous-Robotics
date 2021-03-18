@@ -26,7 +26,6 @@ ULTRASONICTRUEMAX = 255.0  # Highest possible distance the ultrasonic can detect
 TURN90 = 48.555  # Motor value for 90 degree turn. Matt's solution.
 TURN90ROTATIONS = 0 # ninetyDegreeTurnRotations???????? huh????
 SIMULATOR = False
-STANDARDSPEED = 25
 
 sound = Sound()
 mLeft = LargeMotor(OUTPUT_B)
@@ -34,7 +33,6 @@ mRight = LargeMotor(OUTPUT_C)
 sColor = ColorSensor()
 sSonic = UltrasonicSensor()
 sTouch = TouchSensor()
-
 
 steering_drive = MoveSteering(OUTPUT_B, OUTPUT_C)
 tank_drive = MoveTank(OUTPUT_B, OUTPUT_C)
@@ -168,16 +166,14 @@ def sense():
 """
 EVENT LOOP funny moments 
 """
+announce("Ultrasonic checking")
+announce("Current reading"+str(ultrasonic()))
+sleep(0.1)
 motorSpeed(25)
-sleep(0.25)
-while color() != 1:
-    None
+while ultrasonic() > 200:
+    sleep(0.1)
 motorSpeed(0)
-sleep(0.5)
-motorSpeed(25)
-while color() == 1:
-    None
-motorSpeed(0)
+
 goal = True
 # drive forward until black square
 # drive to top of black square and save the length
