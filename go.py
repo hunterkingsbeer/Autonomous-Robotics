@@ -85,6 +85,11 @@ def towerDistance(theta, hypotenuse):
 
     return horizontal, vertical
 
+# Hunter functions
+
+def turnClockwiseRotations():
+    mLeft.on_for_rotations(SpeedPercent(25), 50)
+
 
 # Jack functions
 
@@ -186,19 +191,63 @@ def color(): # Alias calling colour sensor. Wish it was sColour.colour, but y'kn
 EVENT LOOP
 """
 
+def rotateDegreesRight(degrees):
+    amount = 0.94/90
+    mLeft.on_for_rotations(SpeedPercent(3), amount*degrees)
+
+def rotateDegreesLeft(degrees):
+    amount = 0.94/90
+    mRight.on_for_rotations(SpeedPercent(3), amount*degrees)
+
+# rotate 90, slow 90 degree scanning distance
+# when ultrasonic scanner hits, report distance, go back to initial
+
+towerFound = False
+searchDegrees = 0
+searchRotationAmount = 3
+
+
+orientation = turnClockwise(orientation)
+while towerFound is False:
+    for index in range(89):
+        rotateDegreesRight(searchRotationAmount)  # turn 1 degree at a time, for 90 degrees
+        searchDegrees += searchRotationAmount  # increment the searchDegrees +1
+        if ultrasonic() < 100:  # if ultrasonic returns less than 100cm, tower has been found
+            # announce("Found it, wow im so happy")
+            halt()
+            towerFound = True
+            break
+        if towerFound:
+            break
+    if towerFound:
+        break
+
+if towerFound is True:
+    rotateDegreesLeft(searchDegrees)  # rotate the degrees back into position
+
+
+
+
+
+"""
 while goal is False:
 
     # tank_drive.on(25, 25)
     # sleep(1)
     # orientation = turnClockwise(orientation)
-    # sleep(2)
+    # sleep(2)fff
     # tank_drive.on(25, 25)
     # sleep(1)
     # orientation = turnCounterclockwise(orientation)
-    # sleep(2)
-    # announce("Key order G")
-    # sleep(0.2)
+    # sleep(2)f
+    # announce("Key order G")ffffffffgfgffffffffffffffff
+    # sleep(0.2)f
     # announce(str(sColor.color))
+
+
+
+    
+
 
     announce("Ultrasonic is" + str(ultrasonic()))
     motorSpeed(25)
@@ -210,8 +259,9 @@ while goal is False:
             sleep(1)
             announce("Ultrasonic is" + str(ultrasonic()))
     goal = True
-
+ 
 if goal is True:
     announce("Goal")
 else:
     announce("No goal")
+"""
