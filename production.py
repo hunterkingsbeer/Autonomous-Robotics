@@ -7,6 +7,7 @@ from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor, TouchSensor
 from ev3dev2.sound import Sound
 
 import math
+import logging
 
 # Initialize dictionaries
 deltaTiles = {  # Orientations to delta tile positions. Usage would be tile+=deltaTiles[orientation]
@@ -165,23 +166,50 @@ def color(): # Alias calling colour sensor. Wish it was sColour.colour, but y'kn
 def sense():
     return None
 
+def quickchunk():
+    increment=0
+    for i in range(3):
+        if color()==1:
+            increment+=1
+        motorSpeed(25)
+        sleep(.1)
+        halt()
+    return increment
 """
 EVENT LOOP funny moments 
 """
-motorSpeed(25)
-sleep(0.25)
-while color() != 1:
-    None
-motorSpeed(0)
+
+# Go forth and count squares while you do it. Stop if there's less than 100cm of space in front.
+
+motorSpeed(15)
 sleep(0.5)
-motorSpeed(25)
-while color() == 1:
-    None
-motorSpeed(0)
-goal = True
+sColor.calibrate_white()
+logging.log(0,"CALIBRADE D")
+while goal == False:
+
+    # Go speed
+    motorSpeed(25)
+    # Detect start of square
+    # While not black
+    result=quickchunk()
+    if result > 2:
+        announce("is")
+    sleep(0.1)
+
+    # Go through square s
+    motorSpeed(25)
+    squareCurrent+=deltaTiles[orientation]
+    # While not white
+    while color() != 6:
+        sleep(0.1)
+    #Stop after square
+
+    halt()
+
+
 # drive forward until black square
 # drive to top of black square and save the length
-# go back that length
+# go back that lengt h
 
 # go backwards until next black sqare
 # update square (+15)
