@@ -192,38 +192,63 @@ def color(): # Alias calling colour sensor. Wish it was sColour.colour, but y'kn
 EVENT LOOP
 """
 
-def rotateDegreesRight(degrees):
-    amount = 0.94/90
-    mLeft.on_for_rotations(SpeedPercent(3), amount*degrees)
-
-def rotateDegreesLeft(degrees):
-    amount = 0.94/90
-    mRight.on_for_rotations(SpeedPercent(3), amount*degrees)
-
 # rotate 90, slow 90 degree scanning distance
 # when ultrasonic scanner hits, report distance, go back to initial
+""" FUNCTIONS BUT NOT USED IN SOLUTION
+def findTower(orientation):
+    towerFound = False
+    searchDegrees = 0
+    searchRotationAmount = 5
 
-towerFound = False
-searchDegrees = 0
-searchRotationAmount = 1
+    orientation = turnClockwise(orientation)
+
+    for index in range(int(89/searchRotationAmount)):
+        if towerFound is False:
+            rotateDegreesRight(searchRotationAmount)  # turn 1 degree at a time, for 90 degrees
+            searchDegrees += searchRotationAmount  # increment the searchDegrees +1
+            testSonic = ultrasonic()
+            if testSonic < 100:  # if ultrasonic returns less than 100cm, tower has been found
+                announce("FOUND" + str(testSonic))
+                towerFound = True
+            sleep(0.5)
+
+    if towerFound is True:
+        rotateDegreesLeft(searchDegrees)  # rotate the degrees back into position
+
+    return searchDegrees
+"""
+
+def rotateDegreesRight(degrees):
+    amount = 0.935 / 90
+    mLeft.on_for_rotations(SpeedPercent(20), amount*degrees)
+    sleep(0.1)
 
 
-orientation = turnClockwise(orientation)
+def rotateDegreesLeft(degrees):
+    amount = 0.935 / 90
+    mRight.on_for_rotations(SpeedPercent(20), amount*degrees)
+    sleep(0.1)
 
 
-for index in range(89):
-    if towerFound is False:
-        rotateDegreesRight(searchRotationAmount)  # turn 1 degree at a time, for 90 degrees
-        searchDegrees += searchRotationAmount  # increment the searchDegrees +1
-        testSonic = ultrasonic()
-        if testSonic < 100:  # if ultrasonic returns less than 100cm, tower has been found
-            announce("FOUND"+str(testSonic))
-            towerFound = True
-#
+def reverseRotateLeft(degrees):
+    amount = 0.935 / 90
+    mLeft.on_for_rotations(SpeedPercent(-20), amount * degrees)
+    sleep(0.1)
 
-if towerFound is True:
-    rotateDegreesLeft(searchDegrees)  # rotate the degrees back into position
+def reverseRotateRight(degrees):
+    amount = 0.935 / 90
+    mRight.on_for_rotations(SpeedPercent(-20), amount * degrees)
+    sleep(0.1)
 
+def tankRotateDegrees(degrees):
+    amount = (0.935/2) / 90
+    tank_drive.on_for_rotations(SpeedPercent(-20 if degrees < 0 else 20), SpeedPercent(20 if degrees > 0 else -20), amount*degrees)
+    sleep(0.1)
+
+def squarePivot(degrees):
+    reverseRotateRight(degrees / 2)
+    rotateDegreesRight(degrees / 2)
+    sleep(0.1)
 
 
 """
@@ -236,8 +261,8 @@ while goal is False:
     # tank_drive.on(25, 25)
     # sleep(1)
     # orientation = turnCounterclockwise(orientation)
-    # sleep(2)f
-    # announce("Key order G")ffffffff fffffffffffffsf
+    # sleep(2)
+    # announce("Key order G")ffffffffffffffffffffffffffffff
     # sleep(0.2)ff
     # announce(str(sColor.color))
 
