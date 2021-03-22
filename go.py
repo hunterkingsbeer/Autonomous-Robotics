@@ -251,34 +251,45 @@ def squarePivot(degrees):
     sleep(0.1)
 
 
-"""
-while goal is False:
 
-    # tank_drive.on(25, 25)
-    # sleep(1)
-    # orientation = turnClockwise(orientation)
-    # sleep(2)fff
-    # tank_drive.on(25, 25)
-    # sleep(1)
-    # orientation = turnCounterclockwise(orientation)
-    # sleep(2)
-    # announce("Key order G")ffffffffffffffffffffffffffffff
-    # sleep(0.2)ff
-    # announce(str(sColor.color))
+def checkIfBlackTile():
+    blackSensorCheck = 0
 
-    announce("Ultrasonic is" + str(ultrasonic()))
-    motorSpeed(25)
-    halt()
-    announce("Ultrasonic is" + str(ultrasonic()))
+    for i in range(3):
+        if color() == 1:
+            blackSensorCheck += 1
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.08)
+        sleep(0.1)
 
-    if color() is not 6:
-        while True:
-            sleep(1)
-            announce("Ultrasonic is" + str(ultrasonic()))
-    goal = True
- 
-if goal is True:
-    announce("Goal")
-else:
-    announce("No goal")
-"""
+    if blackSensorCheck >= 3:
+        return True
+    else:
+        return False
+
+
+
+def countBlackTile(currentTileNum):
+    foundBlackTile = False
+
+    while foundBlackTile == False: #while its not on a black square
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.15) #drive forward
+
+        if color() == 1: #then check if its a black square.
+            if checkIfBlackTile(): #verify that it is actually a black square!
+                currentTileNum += deltaTiles[orientation] #add increment CHANGE TO WORK WITH ORIENTATION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                announce(currentTileNum)
+                foundBlackTile = True
+                return currentTileNum
+
+def findBlackTile(desiredTile):
+    currentTileNum = 0
+
+    while currentTileNum != desiredTile:
+        currentTileNum = countBlackTile(currentTileNum)
+    if currentTileNum == desiredTile:
+        announce("FOUND")
+
+
+#testing purposes START ORIENTATION IN GOING HORIZONTAL
+orientation = 90
+findBlackTile(3)
