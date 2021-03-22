@@ -175,6 +175,10 @@ def quickchunk():
         sleep(.1)
         halt()
     return increment
+
+def luminance(groundTuple):
+    return (groundTuple[0]*0.2126)+(groundTiple[1]*0.7152)+(groundTuple[2]*0.0722)
+
 """
 EVENT LOOP funny moments 
 """
@@ -183,10 +187,25 @@ EVENT LOOP funny moments
 
 motorSpeed(15)
 sleep(0.5)
+halt()
+sleep(0.2)
 sColor.calibrate_white()
-logging.log(0,"CALIBRADE D")
-while goal == False:
 
+groundWhite = luminance(sColor.raw)
+groundBlack = luminance(sColor.raw)
+
+motorSpeed(15)
+while color() != 1:
+    None
+sleep(0.2)
+ground
+sleep(0.3)
+logging.log(0,"CALIBRADE D")
+
+while goal == False:
+    print(str(sColor.raw))
+
+"""
     # Go speed
     motorSpeed(25)
     # Detect start of square
@@ -205,7 +224,7 @@ while goal == False:
     #Stop after square
 
     halt()
-
+"""
 
 # drive forward until black square
 # drive to top of black square and save the length
