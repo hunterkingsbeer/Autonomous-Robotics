@@ -171,27 +171,9 @@ def luminance(groundTuple):
 EVENT LOOP funny moments 
 """
 
-# Go forth and count squares while you do it. Stop if there's less than 100cm of space in front.
-
-motorSpeed(15)
-sleep(0.5)
+motorSpeed(25)
+announce("Test")
 halt()
-sleep(0.2)
-sColor.calibrate_white()
-
-groundWhite = luminance(sColor.raw)
-groundBlack = luminance(sColor.raw)
-
-motorSpeed(15)
-while color() != 1:
-    None
-sleep(0.2)
-ground
-sleep(0.3)
-logging.log(0,"CALIBRADE D")
-
-while goal == False:
-    print(str(sColor.raw))
 
 """
     # Go speed

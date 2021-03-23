@@ -17,7 +17,7 @@ SIMULATOR = False
 
 # Imports
 
-from time import sleep
+from time import sleep, time, ctime
 
 from ev3dev2.motor import LargeMotor, OUTPUT_B, OUTPUT_C, SpeedPercent, MoveTank, MoveSteering
 from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor, TouchSensor
@@ -60,7 +60,7 @@ keyTiles = {
 # Initialize objects and constants. Nothing in here should cause the robot to move.
 ULTRASONICTRUEMAX = 255.0  # Highest possible distance the ultrasonic can detect.
 TURN90 = 48.555  # Motor value for 90 degree turn. Matt's solution.
-TURN90ROTATIONS = 0 # ninetyDegreeTurnRotations???????? huh????
+TURN90ROTATIONS = 0  # ninetyDegreeTurnRotations???????? huh????
 
 sound = Sound()
 mLeft = LargeMotor(OUTPUT_B)
@@ -74,15 +74,16 @@ tank_drive = MoveTank(OUTPUT_B, OUTPUT_C)
 
 # Initialize common public variables
 
-squareCurrent = 0 #currentSquare
+squareCurrent = 0  # currentSquare
 squareLength = 0
-squareXdis = 0 #bSquareXdis
-squareYdis = 0 #bSquareYdis
-squaresX = 0 #xSquares
-squaresY = 0 #ySquares
+squareXdis = 0  # bSquareXdis
+squareYdis = 0  # bSquareYdis
+squaresX = 0  # xSquares
+squaresY = 0  # ySquares
 
 orientation = 0
 goal = False
+
 
 # Define functions
 
@@ -91,18 +92,20 @@ goal = False
 # Returns angle.
 def calcAngle(rotations):
     ratio = rotations / TURN90ROTATIONS
-    angle = 90*ratio
+    angle = 90 * ratio
     return angle
+
 
 # Returns both.
 def towerDistance(theta, hypotenuse):
     x = hypotenuse * math.cos(theta)
-    horizontal = x/(squareXdis+squareLength)
+    horizontal = x / (squareXdis + squareLength)
 
     y = hypotenuse * math.sin(theta)
-    vertical = y/(squareYdis+squareLength)
+    vertical = y / (squareYdis + squareLength)
 
     return horizontal, vertical
+
 
 # Hunter functions
 
@@ -131,7 +134,7 @@ def turnCounterclockwise(orientation):
 
     orientation -= 90
     if orientation < 0:
-        orientation = 360-orientation
+        orientation = 360 - orientation
     orientation = orientation % 360
 
     steering_drive.on_for_rotations(-TURN90, SpeedPercent(50), 1)  # TODO FIX
@@ -163,7 +166,8 @@ def setOrientation(orientation, desired):
 def announce(string):
     print(string)
     if SIMULATOR is False:
-        sound.speak(string,play_type=sound.PLAY_NO_WAIT_FOR_COMPLETE)
+        sound.speak(string, play_type=sound.PLAY_NO_WAIT_FOR_COMPLETE)
+    log(string)
 
 
 def victorySound():
@@ -177,21 +181,26 @@ def failureSound():
 def detectSound():
     return None
 
-def motorSpeed(n): # Alias for both motors.
+
+def motorSpeed(n):  # Alias for both motors.
     mLeft.on(speed=n)
     mRight.on(speed=n)
+
 
 def halt():
     mLeft.on(0)
     mRight.on(0)
 
-def goTillTouch(): # Experimental and hopefully functional!
+
+def goTillTouch():  # Experimental and hopefully functional!
     motorSpeed(15)
     sTouch.wait_for_pressed()
     motorSpeed(0)
 
+
 def luminance(groundTuple):
     return (groundTuple[0] * 0.2126) + (groundTuple[1] * 0.7152) + (groundTuple[2] * 0.0722)
+
 
 # Not dealing with this for now because it seems as though the color sensor automatically calibrates (DEPENDING ON MODE)
 """def calibrate(orientation):
@@ -200,15 +209,22 @@ def luminance(groundTuple):
     return orientation"""
 
 
-def ultrasonic(): # Alias that calls the ultrasonic sensor. This function exists so we can change it later.
+def ultrasonic():  # Alias that calls the ultrasonic sensor. This function exists so we can change it later.
     sleep(0.125)
-    n = sSonic.distance_centimeters # Supposedly, the ultrasonic sensor locks up when checked more than 1/100ms
+    n = sSonic.distance_centimeters  # Supposedly, the ultrasonic sensor locks up when checked more than 1/100ms
     return n
 
 
-def color(): # Alias calling colour sensor. Wish it was sColour.colour, but y'know
+def color():  # Alias calling colour sensor. Wish it was sColour.colour, but y'know
     n = sColor.color
     return n
+
+
+def log(s=""):
+    f = open("log.txt", "a")
+    f.write("\n" + ctime(time()) + " " + s)
+    f.close()
+
 
 """
 EVENT LOOP
@@ -240,15 +256,16 @@ def findTower(orientation):
     return searchDegrees
 """
 
+
 def rotateDegreesRight(degrees):
     amount = 0.935 / 90
-    mLeft.on_for_rotations(SpeedPercent(20), amount*degrees)
+    mLeft.on_for_rotations(SpeedPercent(20), amount * degrees)
     sleep(0.1)
 
 
 def rotateDegreesLeft(degrees):
     amount = 0.935 / 90
-    mRight.on_for_rotations(SpeedPercent(20), amount*degrees)
+    mRight.on_for_rotations(SpeedPercent(20), amount * degrees)
     sleep(0.1)
 
 
@@ -257,21 +274,24 @@ def reverseRotateLeft(degrees):
     mLeft.on_for_rotations(SpeedPercent(-20), amount * degrees)
     sleep(0.1)
 
+
 def reverseRotateRight(degrees):
     amount = 0.935 / 90
     mRight.on_for_rotations(SpeedPercent(-20), amount * degrees)
     sleep(0.1)
 
+
 def tankRotateDegrees(degrees):
-    amount = (0.935/2) / 90
-    tank_drive.on_for_rotations(SpeedPercent(-20 if degrees < 0 else 20), SpeedPercent(20 if degrees > 0 else -20), amount*degrees)
+    amount = (0.935 / 2) / 90
+    tank_drive.on_for_rotations(SpeedPercent(-20 if degrees < 0 else 20), SpeedPercent(20 if degrees > 0 else -20),
+                                amount * degrees)
     sleep(0.1)
+
 
 def squarePivot(degrees):
     reverseRotateRight(degrees / 2)
     rotateDegreesRight(degrees / 2)
     sleep(0.1)
-
 
 
 def checkIfBlackTile():
@@ -289,29 +309,33 @@ def checkIfBlackTile():
         return False
 
 
-
 def countBlackTile(currentTileNum):
     foundBlackTile = False
 
-    while foundBlackTile == False: #while its not on a black square
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.15) #drive forward
+    while foundBlackTile == False:  # while its not on a black square
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.15)  # drive forward
 
-        if color() == 1: #then check if its a black square.
-            if checkIfBlackTile(): #verify that it is actually a black square!
-                currentTileNum += deltaTiles[orientation] #add increment CHANGE TO WORK WITH ORIENTATION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if color() == 1:  # then check if its a black square.
+            if checkIfBlackTile():  # verify that it is actually a black square!
+                currentTileNum += deltaTiles[
+                    orientation]  # add increment CHANGE TO WORK WITH ORIENTATION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 announce(currentTileNum)
                 foundBlackTile = True
                 return currentTileNum
 
-def findBlackTile(desiredTile):
-    currentTileNum = 0
 
+def findBlackTile(desiredTile, currentTileNum=0):
     while currentTileNum != desiredTile:
         currentTileNum = countBlackTile(currentTileNum)
     if currentTileNum == desiredTile:
-        announce("FOUND")
+        announce("FOUND " + desiredTile)
+
+    return currentTileNum
 
 
-#testing purposes START ORIENTATION IN GOING HORIZONTAL
+# start square 16?
+# orientation reporting on a multiple of 90 pivot?
+# return current tile as square num?
+# testing purposes START ORIENTATION IN GOING HORIZONTAL
 orientation = 90
 findBlackTile(3)
