@@ -35,7 +35,26 @@ deltaTiles = {  # Orientations to delta tile positions. Usage would be tile+=del
 }
 
 keyTiles = {
-    0: 0
+    56: 1,
+    57: 1,
+    58: 2,
+    59: 2,
+    60: 3,
+    71: 4,
+    72: 4,
+    73: 5,
+    74: 6,
+    75: 6,
+    86: 7,
+    87: 7,
+    88: 8,
+    89: 9,
+    90: 9,
+    101: 10,
+    102: 10,
+    103: 11,
+    104: 12,
+    105: 12
 }
 
 # Initialize objects and constants. Nothing in here should cause the robot to move.
@@ -144,7 +163,7 @@ def setOrientation(orientation, desired):
 def announce(string):
     print(string)
     if SIMULATOR is False:
-        sound.speak(string)
+        sound.speak(string,play_type=sound.PLAY_NO_WAIT_FOR_COMPLETE)
 
 
 def victorySound():
@@ -170,6 +189,9 @@ def goTillTouch(): # Experimental and hopefully functional!
     motorSpeed(15)
     sTouch.wait_for_pressed()
     motorSpeed(0)
+
+def luminance(groundTuple):
+    return (groundTuple[0] * 0.2126) + (groundTuple[1] * 0.7152) + (groundTuple[2] * 0.0722)
 
 # Not dealing with this for now because it seems as though the color sensor automatically calibrates (DEPENDING ON MODE)
 """def calibrate(orientation):

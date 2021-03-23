@@ -126,19 +126,7 @@ def setOrientation(orientation, desired):
 def announce(string):
     print(string)
     if SIMULATOR is False:
-        sound.speak(string)
-
-
-def victorySound():
-    return None
-
-
-def failureSound():
-    return None
-
-
-def detectSound():
-    return None
+        sound.speak(string,play_type=sound.PLAY_NO_WAIT_FOR_COMPLETE)
 
 def motorSpeed(n): # Alias for both motors.
     mLeft.on(speed=n)
@@ -148,7 +136,7 @@ def halt():
     mLeft.on(0)
     mRight.on(0)
 
-def goTillTouch(): # Experimental and hopefully functional!
+def goTillTouch(): # functional but shit
     motorSpeed(15)
     sTouch.wait_for_pressed()
     motorSpeed(0)
@@ -177,7 +165,7 @@ def quickchunk():
     return increment
 
 def luminance(groundTuple):
-    return (groundTuple[0]*0.2126)+(groundTiple[1]*0.7152)+(groundTuple[2]*0.0722)
+    return (groundTuple[0]*0.2126)+(groundTuple[1]*0.7152)+(groundTuple[2]*0.0722)
 
 """
 EVENT LOOP funny moments 

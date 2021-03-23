@@ -20,16 +20,24 @@ deltaTiles = {  # Orientations to delta tile positions. Usage would be tile+=del
 
 keyTiles = {
     56: 1,
+    57: 1,
     58: 2,
+    59: 2,
     60: 3,
     71: 4,
+    72: 4,
     73: 5,
+    74: 6,
     75: 6,
     86: 7,
+    87: 7,
     88: 8,
+    89: 9,
     90: 9,
     101: 10,
+    102: 10,
     103: 11,
+    104: 12,
     105: 12
 }
 
