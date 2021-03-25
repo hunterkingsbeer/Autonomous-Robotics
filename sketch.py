@@ -28,3 +28,25 @@ def testreflect():
 def velocityZero():
     mLeft.wait_until_not_moving(100)
     mRight.wait_until_not_moving(100)
+
+"""
+Grey:
+Lum: 145.0266
+Refle: 38
+Lum: 153.458
+Refle: 40
+
+Grout:
+Lum:  76.5390000000~ funny
+Refle: 22
+
+White:
+Lum: 178~176
+Ref: 50
+Lum: 194
+Ref: 54
+
+Black:
+Lum: 46.637
+Reflect: 11
+"""
