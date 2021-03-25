@@ -18,13 +18,12 @@ SIMULATOR = False
 
 # Imports
 
+import math
 from time import sleep, time, ctime
 
 from ev3dev2.motor import LargeMotor, OUTPUT_B, OUTPUT_C, SpeedPercent, MoveTank, MoveSteering
 from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor, TouchSensor
 from ev3dev2.sound import Sound
-
-import math
 
 # Initialize dictionaries
 deltaTiles = {  # Orientations to delta tile positions. Usage would be tile+=deltaTiles[orientation]
@@ -162,7 +161,7 @@ def setOrientation(desired):
 def announce(string, pause=True):
     print(string)
     if SIMULATOR is False:
-        if pause == False:
+        if not pause:
             sound.speak(string, play_type=sound.PLAY_NO_WAIT_FOR_COMPLETE)
         else:
             sound.speak(string)
@@ -369,7 +368,7 @@ def checkIfBlackTile():
 def countBlackTile(currentTileNum):
     foundBlackTile = False
 
-    while foundBlackTile == False:  # while its not on a black square
+    while not foundBlackTile:  # while its not on a black square
         tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.15)  # drive forward
 
         if color() == 1:  # then check if its a black square.
@@ -400,7 +399,7 @@ def findBlackTile(desiredTile, currentTileNum=1):
             # announce("column down")
             # orientate down (180)
             while orientation != 180:  # if robot isnt facing right (90), rotate until it is
-                if orientation >= 180 and orientation <= 360:
+                if 180 <= orientation <= 360:
                     tankRotateLeft(90)
                 else:
                     tankRotateRight(90)
