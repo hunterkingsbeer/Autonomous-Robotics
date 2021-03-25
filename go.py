@@ -14,7 +14,7 @@
 # TODO: Fix orientation
 
 SIMULATOR = False
-SPEECHPAUSE = True
+# Speech pauses now handled in the announce variable itself. Defaults to pause
 
 # Imports
 
@@ -159,10 +159,10 @@ def setOrientation(desired):
     # duringset = False
 
 
-def announce(string):
+def announce(string,pause=True):
     print(string)
     if SIMULATOR is False:
-        if SPEECHPAUSE == False:
+        if pause == False:
             sound.speak(string, play_type=sound.PLAY_NO_WAIT_FOR_COMPLETE)
         else:
             sound.speak(string)
@@ -436,7 +436,6 @@ def findBlackTile(desiredTile, currentTileNum=1):
 #start facing 0 degrees
 orientation = 0
 findBlackTile(18)
-
 
 
 
