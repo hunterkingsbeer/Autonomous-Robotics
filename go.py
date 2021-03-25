@@ -34,6 +34,12 @@ deltaTiles = {  # Orientations to delta tile positions. Usage would be tile+=del
     360: -15
 }
 
+columnTiles = {
+    1: 56,
+    2: 58,
+    3: 59
+}
+
 keyTiles = {
     56: 1,
     57: 1,
@@ -197,6 +203,7 @@ def goTillTouch():  # Experimental and hopefully functional!
     motorSpeed(0)
 
 
+
 def luminance(groundTuple):
     return (groundTuple[0] * 0.2126) + (groundTuple[1] * 0.7152) + (groundTuple[2] * 0.0722)
 
@@ -338,116 +345,168 @@ def tankRotateRight(degrees):
     sleep(0.1)
 
 
-# needs to be changed, doesnt actually even pivot
-# should only put in 90 degree amounts, (90/180/270/360)
-def squarePivot(degrees):
-    for i in range(int(degrees / 90)):
-        if degrees > 0:
-            reverseRotateRight(90 / 2)
-            rotateDegreesRight(90 / 2)
-        else:
-            degrees *= -1
-            reverseRotateLeft(90 / 2)
-            rotateDegreesLeft(90 / 2)
-
-    sleep(0.1)
-
-    announce(str(orientation))
+# SEEKING FUNCTIONS ----------------------------------------------------------------------------------------------------
 
 
+# verifies black tiles by taking multiple point color checks, returns true if it is a black square.
 def checkIfBlackTile():
     blackSensorCheck = 0
-
-    for i in range(4):
+    # (value used to be 4)
+    for i in range(2):
         if color() == 1:
             blackSensorCheck += 1
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.08)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2) # (used 0.08)
         sleep(0.1)
 
-    if blackSensorCheck >= 4:
+    if blackSensorCheck >= 2: # If 2 checks showed black, its a black square. (value used to be 4)
         return True
     else:
         return False
 
 
+# drives until it can count another black tile, upon which it increments the current tile number.
 def countBlackTile():
     global currentTileNum
     foundBlackTile = False
 
     while not foundBlackTile:  # while its not on a black square
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.15)  # drive forward
-
-        if color() == 1:  # then check if its a black square.
-            if checkIfBlackTile():  # verify that it is actually a black square!
-                currentTileNum += deltaTiles[orientation]  # add increment CHANGE TO WORK WITH ORIENTATION!!!!!!!
-                announce(currentTileNum)
+        if orientation == 180: # if robot is travelling down a column
+            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.3)  # drive forward more rotations
+        else: # else robot is travelling across a row
+            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward
+        if color() == 1:  # then check if its a black square, and verify
+            if checkIfBlackTile():
+                currentTileNum += deltaTiles[orientation]
                 foundBlackTile = True
 
 
-def calibrate():
-    global currentTileNum
-
-    if currentTileNum == 0:
-        announce("find 1")
-        currentTileNum = countBlackTile()
-        announce("found tile " + currentTileNum)
-
-
-# start at tile 1. If not, the math.ceil will break
+# start at tile 1. If not, the math.ceil function will break
 def findBlackTile(desiredTile):
-    announce("desired tile " + str(desiredTile))
-    announce("current tile " + str(currentTileNum))
-
+    announce("find" + str(desiredTile))
     global currentTileNum
 
     while currentTileNum != desiredTile:  # until you find the desired tile
 
-        # tile is with the current row
-        if math.ceil(desiredTile / 15) > math.ceil(currentTileNum / 15):  # if desired row is below the current row
-            # announce("column down")
-            # orientate down (180)
-            while orientation != 180:  # if robot isn't facing right (90), rotate until it is
-                if 180 <= orientation <= 360:
-                    tankRotateLeft(90)
-                else:
-                    tankRotateRight(90)
+        # if desired tile is BELOW the current row, need to travel DOWN
+        if math.ceil(desiredTile / 15) > math.ceil(currentTileNum / 15):
+            changeOrientation(180)
             countBlackTile()  # then count squares until you find the tile
 
+        # if desired tile is ABOVE the current row, need to travel UP
+        elif math.ceil(desiredTile / 15) < math.ceil(currentTileNum / 15):
+            changeOrientation(180)
+            countBlackTile()  # then count squares until you find the tile
 
-        # tile is below the current row
+        # if desired tile is WITHIN the current row, need to travel LEFT or RIGHT
         elif math.ceil(desiredTile / 15) == math.ceil(currentTileNum / 15):
-            # if the desired tile is to the right of the robot
-            if currentTileNum < desiredTile:
-                # announce("row right")
-                while orientation != 90:  # if robot isn't facing right (90), rotate until it is
-                    tankRotateRight(90)
-                countBlackTile()  # then count squares until you find the tile
 
-            # desired tile must be to the left of robot
-            elif desiredTile < currentTileNum:
-                # announce("row left")
-                while orientation != 270:  # if robot isn't facing left (270), rotate until it is
-                    tankRotateRight(90)
+            # if the desired tile is to the LEFT of the robot
+            if desiredTile < currentTileNum:
+                changeOrientation(270)  # face left
                 countBlackTile()
-        else:
-            announce("error")
 
+            # if the desired tile is to the RIGHT of the robot
+            elif currentTileNum < desiredTile:
+                changeOrientation(90)  # face right
+                countBlackTile()
+    # announce when you find the desired tile
     if currentTileNum == desiredTile:
-        announce("FOUND " + desiredTile)
+        announce("FOUND " + str(desiredTile))
 
 
-
-# start square 16?
-# orientation reporting on a multiple of 90 pivot?
-# return current tile as square num?
-
-# start facing 0 degrees
-orientation = 0
-currentTileNum = 1 #to calibrate it, and not break the find black tile
-
-findBlackTile(55)
-
-"""
+# uses tank rotate to move to a desired rotation
+def changeOrientation(desiredOrientation):
+    while orientation != desiredOrientation:
+        if orientation < desiredOrientation:  # make sure we turn using the appropriate direction
+            tankRotateRight(90)
+        else:
+            tankRotateLeft(90)
 
 
+# HAVE NOT IMPLEMENTED, BUT SHOULD HOPEFULLY WORK
+def scanColumn(columnNumber):
+    global towerDist  # towers distance
+    global towerCol  # towers column
+
+    findBlackTile(columnTiles[columnNumber])
+    changeOrientation(90)  # make sure its facing 90 degrees, may not be needed.
+
+    if columnNumber != 2:  # if column 1 or 3 (with 2 black tiles on the edge of the big tile)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive to center of tile
+        rotateDegreesRight(90)  # turn right, to face down (180) to scan
+        tempDist = ultrasonic()
+        if tempDist < towerDist:  # if current distance is less than the last tower distance
+            towerDist = tempDist  # then update the tower variables
+            towerCol = columnNumber
+        rotateDegreesRight(-90)  # reverse the turn
+
+    else:  # if column 2 (with black tile in center of the big tile)
+        changeOrientation(180)  # pivot to face down
+        tempDist = ultrasonic()
+        if tempDist < towerDist:  # if current distance is less than the last tower distance
+            towerDist = tempDist  # then update the tower variables
+            towerCol = columnNumber
+
+
+# seeks the tower by scanning each of the 3 tower tile columns, reports back the towers column
+def seekTower():
+    towerDist = 0
+    colNum = 0
+
+    # find column 1's first black square
+    findBlackTile(56)
+    while currentTileNum == 56:
+        changeOrientation(90)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
+        rotateDegreesRight(90)
+        towerDist = ultrasonic()
+        rotateDegreesRight(-90)
+        colNum = 1
+        break
+
+    # find column 2's first black square
+    findBlackTile(58)
+    while currentTileNum == 58:
+        changeOrientation(180)
+        col2 = ultrasonic()
+        if col2 < towerDist:
+            tempDistance = col2
+            colNum = 2
+        break
+
+    # find column 3's first black square
+    findBlackTile(59)
+    while currentTileNum == 59:
+        changeOrientation(90)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
+
+        rotateDegreesRight(90)
+        col3 = ultrasonic()
+        rotateDegreesRight(-90)
+        if col3 < towerDist:
+            towerDist = col3
+            colNum = 3
+        break
+
+    announce("column " + str(colNum))
+    sleep(0.2)
+    announce("distance " + str(towerDist))
+
+
+# EVENT CODE -----------------------------------------------------------------------------------------------------------
+
+# SEEK VARIABLES
+towerDist = 0
+towerCol = 0
+
+# CHANGEABLE VARIABLES
+orientation = 0 # 0, 90, 180, 270
+currentTileNum = 1
+
+# PROCESSES
+seekTower()
+
+
+""" 
+fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 """
