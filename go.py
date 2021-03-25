@@ -82,6 +82,7 @@ squaresX = 0  # xSquares
 squaresY = 0  # ySquares
 
 orientation = 0
+currentTileNum = 0
 goal = False
 
 
@@ -146,13 +147,13 @@ def setOrientation(desired):
         i = difference / 90
         # print(i)
         while i > 0.99:
-            orientation = turnCounterclockwise(orientation)
+            orientation = turnCounterclockwise()
             i = i - 1
     else:
         i = (difference / 90) * -1
         # print(i)
         while i > 0.99:
-            orientation = turnClockwise(orientation)
+            orientation = turnClockwise()
             i = i - 1
     announce("\tSet orientation")
     # duringset = False
@@ -257,7 +258,7 @@ def findTower(orientation):
 
 # rotates right wheel forward, to turn left
 def rotateDegreesLeft(degrees):
-    amount = 0.935 / 90
+    amount = 0.938 / 90
     mRight.on_for_rotations(SpeedPercent(20), amount * degrees)
     sleep(0.1)
 
@@ -270,7 +271,7 @@ def rotateDegreesLeft(degrees):
 
 # rotates left wheel forward, to turn right
 def rotateDegreesRight(degrees):
-    amount = 0.935 / 90
+    amount = 0.938 / 90
     mLeft.on_for_rotations(SpeedPercent(20), amount * degrees)
     sleep(0.1)
 
@@ -283,7 +284,7 @@ def rotateDegreesRight(degrees):
 
 # rotates left wheel backwards, to turn left
 def reverseRotateLeft(degrees):
-    amount = 0.935 / 90
+    amount = 0.938 / 90
     mLeft.on_for_rotations(SpeedPercent(-20), amount * degrees)
     sleep(0.1)
 
@@ -296,7 +297,7 @@ def reverseRotateLeft(degrees):
 
 # rotates right wheel backwards, to turn right
 def reverseRotateRight(degrees):
-    amount = 0.935 / 90
+    amount = 0.938 / 90
     mRight.on_for_rotations(SpeedPercent(-20), amount * degrees)
     sleep(0.1)
 
@@ -309,7 +310,7 @@ def reverseRotateRight(degrees):
 
 # rotates wheels opposite, to turn left
 def tankRotateLeft(degrees):
-    amount = (0.935 / 2) / 90
+    amount = (0.938 / 2) / 90
     tank_drive.on_for_rotations(SpeedPercent(-20), SpeedPercent(20), amount * degrees)
 
     global orientation
@@ -365,7 +366,8 @@ def checkIfBlackTile():
         return False
 
 
-def countBlackTile(currentTileNum):
+def countBlackTile():
+    global currentTileNum
     foundBlackTile = False
 
     while not foundBlackTile:  # while its not on a black square
@@ -376,21 +378,23 @@ def countBlackTile(currentTileNum):
                 currentTileNum += deltaTiles[orientation]  # add increment CHANGE TO WORK WITH ORIENTATION!!!!!!!
                 announce(currentTileNum)
                 foundBlackTile = True
-                return currentTileNum
 
 
-def calibrate(currentTileNum):
+def calibrate():
+    global currentTileNum
+
     if currentTileNum == 0:
         announce("find 1")
-        currentTileNum = countBlackTile(0)
+        currentTileNum = countBlackTile()
         announce("found tile " + currentTileNum)
-    return currentTileNum
 
 
 # start at tile 1. If not, the math.ceil will break
-def findBlackTile(desiredTile, currentTileNum=1):
+def findBlackTile(desiredTile):
     announce("desired tile " + str(desiredTile))
     announce("current tile " + str(currentTileNum))
+
+    global currentTileNum
 
     while currentTileNum != desiredTile:  # until you find the desired tile
 
@@ -398,12 +402,12 @@ def findBlackTile(desiredTile, currentTileNum=1):
         if math.ceil(desiredTile / 15) > math.ceil(currentTileNum / 15):  # if desired row is below the current row
             # announce("column down")
             # orientate down (180)
-            while orientation != 180:  # if robot isnt facing right (90), rotate until it is
+            while orientation != 180:  # if robot isn't facing right (90), rotate until it is
                 if 180 <= orientation <= 360:
                     tankRotateLeft(90)
                 else:
                     tankRotateRight(90)
-            currentTileNum = countBlackTile(currentTileNum)  # then count squares until you find the tile
+            countBlackTile()  # then count squares until you find the tile
 
 
         # tile is below the current row
@@ -411,22 +415,22 @@ def findBlackTile(desiredTile, currentTileNum=1):
             # if the desired tile is to the right of the robot
             if currentTileNum < desiredTile:
                 # announce("row right")
-                while orientation != 90:  # if robot isnt facing right (90), rotate until it is
+                while orientation != 90:  # if robot isn't facing right (90), rotate until it is
                     tankRotateRight(90)
-                currentTileNum = countBlackTile(currentTileNum)  # then count squares until you find the tile
-
+                countBlackTile()  # then count squares until you find the tile
 
             # desired tile must be to the left of robot
             elif desiredTile < currentTileNum:
                 # announce("row left")
-                while orientation != 270:  # if robot isnt facing left (270), rotate until it is
+                while orientation != 270:  # if robot isn't facing left (270), rotate until it is
                     tankRotateRight(90)
-                currentTileNum = countBlackTile(currentTileNum)
+                countBlackTile()
         else:
             announce("error")
 
     if currentTileNum == desiredTile:
         announce("FOUND " + desiredTile)
+
 
 
 # start square 16?
@@ -435,8 +439,11 @@ def findBlackTile(desiredTile, currentTileNum=1):
 
 # start facing 0 degrees
 orientation = 0
-findBlackTile(18)
+currentTileNum = 1 #to calibrate it, and not break the find black tile
+
+findBlackTile(55)
 
 """
-fffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+
+
 """
