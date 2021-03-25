@@ -223,6 +223,10 @@ def log(s=""):
     f.write("\n" + ctime(time()) + " " + str(s))
     f.close()
 
+def routeLog(s=""):
+    f = open("routeLog.txt", "a")
+    f.write(str(s)+", ")
+    f.close()
 
 """
 EVENT LOOP
