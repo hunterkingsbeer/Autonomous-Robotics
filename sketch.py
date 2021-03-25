@@ -20,6 +20,11 @@ def luminance(groundTuple):
     return (groundTuple[0] * 0.2126) + (groundTuple[1] * 0.7152) + (groundTuple[2] * 0.0722)
 
 def testreflect():
-    announce("Luminance: " + str(luminance(sColor.raw())))
+    announce("Luminance: " + str(luminance(sColor.raw)))
     announce("Reflectivity: " + str(reflect()))
 
+
+# Wait until motors aren't moving. May be a better replacement for sleep.
+def velocityZero():
+    mLeft.wait_until_not_moving(100)
+    mRight.wait_until_not_moving(100)
