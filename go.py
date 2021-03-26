@@ -345,6 +345,15 @@ def tankRotateRight(degrees):
     sleep(0.1)
 
 
+# uses tank rotate to move to a desired rotation
+def changeOrientation(desiredOrientation):
+    while orientation != desiredOrientation:
+        if orientation < desiredOrientation:  # make sure we turn using the appropriate direction
+            tankRotateRight(90)
+        else:
+            tankRotateLeft(90)
+
+
 # SEEKING FUNCTIONS ----------------------------------------------------------------------------------------------------
 
 
@@ -377,6 +386,7 @@ def countBlackTile():
         if color() == 1:  # then check if its a black square, and verify
             if checkIfBlackTile():
                 currentTileNum += deltaTiles[orientation]
+                sleep(0.1)
                 foundBlackTile = True
 
 
@@ -414,15 +424,6 @@ def findBlackTile(desiredTile):
         announce("FOUND " + str(desiredTile))
 
 
-# uses tank rotate to move to a desired rotation
-def changeOrientation(desiredOrientation):
-    while orientation != desiredOrientation:
-        if orientation < desiredOrientation:  # make sure we turn using the appropriate direction
-            tankRotateRight(90)
-        else:
-            tankRotateLeft(90)
-
-
 # HAVE NOT IMPLEMENTED, BUT SHOULD HOPEFULLY WORK
 def scanColumn(columnNumber):
     global towerDist  # towers distance
@@ -450,63 +451,37 @@ def scanColumn(columnNumber):
 
 # seeks the tower by scanning each of the 3 tower tile columns, reports back the towers column
 def seekTower():
-    towerDist = 0
-    colNum = 0
+    scanColumn(1)
+    scanColumn(2)
+    scanColumn(3)
 
-    # find column 1's first black square
-    findBlackTile(56)
-    while currentTileNum == 56:
-        changeOrientation(90)
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
-        rotateDegreesRight(90)
-        towerDist = ultrasonic()
-        rotateDegreesRight(-90)
-        colNum = 1
-        break
+    findBlackTile(columnTiles[towerCol])
+    changeOrientation(180)
 
-    # find column 2's first black square
-    findBlackTile(58)
-    while currentTileNum == 58:
-        changeOrientation(180)
-        col2 = ultrasonic()
-        if col2 < towerDist:
-            tempDistance = col2
-            colNum = 2
-        break
+    for i in range(3):
+        if ultrasonic() < 10:
+            break
+        findBlackTile(currentTileNum+15)
 
-    # find column 3's first black square
-    findBlackTile(59)
-    while currentTileNum == 59:
-        changeOrientation(90)
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
-
-        rotateDegreesRight(90)
-        col3 = ultrasonic()
-        rotateDegreesRight(-90)
-        if col3 < towerDist:
-            towerDist = col3
-            colNum = 3
-        break
-
-    announce("column " + str(colNum))
-    sleep(0.2)
-    announce("distance " + str(towerDist))
+    announce("found it g")
+    announce("tile " + str(keyTiles[currentTileNum]))
+    announce("column " + str(towerCol))
 
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
 
 # SEEK VARIABLES
-towerDist = 0
+towerDist = 255
 towerCol = 0
 
 # CHANGEABLE VARIABLES
-orientation = 0 # 0, 90, 180, 270
-currentTileNum = 1
+orientation = 90 # 0, 90, 180, 270
+currentTileNum = 55
 
 # PROCESSES
 seekTower()
 
 
-""" 
-fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+"""
+fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 """
