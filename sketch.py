@@ -29,6 +29,9 @@ def velocityZero():
     mLeft.wait_until_not_moving(100)
     mRight.wait_until_not_moving(100)
 
+sound.play_file('start.wav')
+sound.play_file('victory.wav')
+
 """
 Grey:
 Lum: 145.0266
