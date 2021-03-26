@@ -78,3 +78,7 @@ def incrementColumnTiles():
 def decrementColumnTiles():
     for i in columnTiles:
         columnTiles[i]=columnTiles[i]-15
+
+while not seektower():
+    incrementColumnTiles()
+
