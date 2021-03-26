@@ -53,3 +53,11 @@ Black:
 Lum: 46.637
 Reflect: 11
 """
+
+#redefine the seekTower to have a failure variable defaulting to 0.
+
+#change your findBlackTile to something like findBlackTile(columnTiles[1+(15*failures)])
+
+#do this in the event loop
+for i in range (2):
+    seekTower(failures=i)
