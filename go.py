@@ -37,7 +37,16 @@ deltaTiles = {  # Orientations to delta tile positions. Usage would be tile+=del
 columnTiles = {
     1: 56,
     2: 58,
-    3: 59
+    3: 59,
+    4: 71,
+    5: 73,
+    6: 74,
+    7: 86,
+    8: 88,
+    9: 89,
+    10: 101,
+    11: 103,
+    12: 104
 }
 
 keyTiles = {
@@ -429,7 +438,10 @@ def scanColumn(columnNumber):
     global towerDist  # towers distance
     global towerCol  # towers column
 
-    findBlackTile(columnTiles[columnNumber])
+    failureAddition = failures * 15  # NEEDS TO BE FIXED!!!!!!!! GOES TO 56 ON FAILURE 2.
+    if failures != 0:
+        announce(str(columnTiles[columnNumber] + failureAddition))
+    findBlackTile(columnTiles[columnNumber] + failureAddition)
     changeOrientation(90)  # make sure its facing 90 degrees, may not be needed.
 
     if columnNumber != 2:  # if column 1 or 3 (with 2 black tiles on the edge of the big tile)
@@ -451,36 +463,54 @@ def scanColumn(columnNumber):
 
 # seeks the tower by scanning each of the 3 tower tile columns, reports back the towers column
 def seekTower():
+    global foundTower
+    # scanning da tower
     scanColumn(1)
     scanColumn(2)
     scanColumn(3)
 
-    findBlackTile(columnTiles[towerCol])
-    changeOrientation(180)
+    # align with da column
+    if towerCol != 0:
+        findBlackTile(columnTiles[towerCol])
+        changeOrientation(180)
+        # scan all da columns tiles
+        for i in range(3 - failures):
+            if ultrasonic() < 10:
+                announce("found it")
+                foundTower = True
+                break
+            findBlackTile(currentTileNum + 15)
 
-    for i in range(3):
-        if ultrasonic() < 10:
-            break
-        findBlackTile(currentTileNum+15)
-
-    announce("found it g")
-    announce("tile " + str(keyTiles[currentTileNum]))
-    announce("column " + str(towerCol))
-
+    return foundTower
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
 
 # SEEK VARIABLES
 towerDist = 255
 towerCol = 0
+failures = 0
+foundTower = False
 
 # CHANGEABLE VARIABLES
 orientation = 90 # 0, 90, 180, 270
 currentTileNum = 55
 
 # PROCESSES
-seekTower()
+sound.play_file('start.wav')
+for i in range(3):
+    announce("loop " + str(i))
+    if seekTower():
+        break
+    else:
+        failures += 1
 
+if foundTower:
+    announce("fantastic")
+    announce("tile " + str(keyTiles[currentTileNum]))
+    announce("column " + str(towerCol))
+    sound.play_file('victory.wav')
+else:
+    announce("poo poo")
 
 """
 fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
