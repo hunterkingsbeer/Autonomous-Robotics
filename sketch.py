@@ -1,4 +1,4 @@
-# Unused tile diagnostics
+"""# Unused tile diagnostics
 desiredRow=math.ceil(desiredTile/15)
 currentRow=math.ceil(currentTileNum/15)
 roundedDesired=desiredTile-(desiredTile%abs(deltaTile[orientation]))
@@ -32,7 +32,7 @@ def velocityZero():
 sound.play_file('start.wav')
 sound.play_file('victory.wav')
 
-"""
+"""'''
 Grey:
 Lum: 145.0266
 Refle: 38
@@ -51,13 +51,34 @@ Ref: 54
 
 Black:
 Lum: 46.637
-Reflect: 11
+Reflect: 11'''
 """
 
 #redefine the seekTower to have a failure variable defaulting to 0.
 
 #change your findBlackTile to something like findBlackTile(columnTiles[1+(15*failures)])
-
+'
 #do this in the event loop
 for i in range (2):
-    seekTower(failures=i)
+    seekTower(failures=i)'
+    
+"""
+
+columnTiles = {
+    1: 56,
+    2: 58,
+    3: 59
+}
+print(columnTiles)
+
+def incrementColumnTiles():
+    for i in columnTiles:
+        columnTiles[i]=columnTiles[i]+15
+
+def decrementColumnTiles():
+    for i in columnTiles:
+        columnTiles[i]=columnTiles[i]-15
+
+while not seektower():
+    incrementColumnTiles()
+
