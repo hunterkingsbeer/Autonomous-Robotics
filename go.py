@@ -53,7 +53,7 @@ keyTiles = {
     56: 1,
     57: 1,
     58: 2,
-    59: 2,
+    59: 3,
     60: 3,
     71: 4,
     72: 4,
@@ -101,79 +101,6 @@ currentTileNum = 0
 goal = False
 
 
-# Define functions
-
-# Kane functions, jackified
-
-# Returns angle.
-def calcAngle(rotations):
-    ratio = rotations / TURN90ROTATIONS
-    angle = 90 * ratio
-    return angle
-
-
-# Returns both.
-def towerDistance(theta, hypotenuse):
-    x = hypotenuse * math.cos(theta)
-    horizontal = x / (squareXdis + squareLength)
-
-    y = hypotenuse * math.sin(theta)
-    vertical = y / (squareYdis + squareLength)
-
-    return horizontal, vertical
-
-
-# Jack functions
-
-def turnClockwise():
-    # Takes orientation to understand where it currently is, return orientation for where it ends up
-    # Usage:
-    global orientation
-    announce("Current orientation: " + str(orientation))
-
-    orientation += 90
-    orientation = orientation % 360
-
-    steering_drive.on_for_rotations(TURN90, SpeedPercent(50), 1)
-    # I AM ASSUMIGN YOU'D DETECT BOXES HERE
-    announce("New orientation: " + str(orientation) + " (Turned clock)")
-
-
-def turnCounterclockwise():
-    global orientation
-
-    announce("Current orientation: " + str(orientation))
-
-    orientation -= 90
-    if orientation < 0:
-        orientation = 360 - orientation
-    orientation = orientation % 360
-
-    steering_drive.on_for_rotations(-TURN90, SpeedPercent(50), 1)  # TODO FIX
-    # I AM ASSUMIGN YOU'D DETECT BOXES HERE
-    announce("New orientation: " + str(orientation) + " (Turned counter)")
-
-
-def setOrientation(desired):
-    global orientation
-    difference = orientation - desired
-    announce("\tSetting orientation, Difference: " + str(difference))
-    if difference > 0:
-        i = difference / 90
-        # print(i)
-        while i > 0.99:
-            orientation = turnCounterclockwise()
-            i = i - 1
-    else:
-        i = (difference / 90) * -1
-        # print(i)
-        while i > 0.99:
-            orientation = turnClockwise()
-            i = i - 1
-    announce("\tSet orientation")
-    # duringset = False
-
-
 def announce(string, pause=True):
     print(string)
     if SIMULATOR is False:
@@ -182,18 +109,6 @@ def announce(string, pause=True):
         else:
             sound.speak(string)
     log(string)
-
-
-def victorySound():
-    return None
-
-
-def failureSound():
-    return None
-
-
-def detectSound():
-    return None
 
 
 def motorSpeed(n):  # Alias for both motors.
@@ -245,40 +160,10 @@ def routeLog(s=""):
     f.write(str(s)+", ")
     f.close()
 
-"""
-EVENT LOOP
-"""
-
-# rotate 90, slow 90 degree scanning distance
-# when ultrasonic scanner hits, report distance, go back to initial
-""" FUNCTIONS BUT NOT USED IN SOLUTION
-def findTower(orientation):
-    towerFound = False
-    searchDegrees = 0
-    searchRotationAmount = 5
-
-    orientation = turnClockwise(orientation)
-
-    for index in range(int(89/searchRotationAmount)):
-        if towerFound is False:
-            rotateDegreesRight(searchRotationAmount)  # turn 1 degree at a time, for 90 degrees
-            searchDegrees += searchRotationAmount  # increment the searchDegrees +1
-            testSonic = ultrasonic()
-            if testSonic < 100:  # if ultrasonic returns less than 100cm, tower has been found
-                announce("FOUND" + str(testSonic))
-                towerFound = True
-            sleep(0.5)
-
-    if towerFound is True:
-        rotateDegreesLeft(searchDegrees)  # rotate the degrees back into position
-
-    return searchDegrees
-"""
-
 
 # rotates right wheel forward, to turn left
 def rotateDegreesLeft(degrees):
-    amount = 0.938 / 90
+    amount = 0.94 / 90
     mRight.on_for_rotations(SpeedPercent(20), amount * degrees)
     sleep(0.1)
 
@@ -291,7 +176,7 @@ def rotateDegreesLeft(degrees):
 
 # rotates left wheel forward, to turn right
 def rotateDegreesRight(degrees):
-    amount = 0.938 / 90
+    amount = 0.94 / 90
     mLeft.on_for_rotations(SpeedPercent(20), amount * degrees)
     sleep(0.1)
 
@@ -369,8 +254,7 @@ def changeOrientation(desiredOrientation):
 # verifies black tiles by taking multiple point color checks, returns true if it is a black square.
 def checkIfBlackTile():
     blackSensorCheck = 0
-    # (value used to be 4)
-    for i in range(2):
+    for i in range(2):  # (value used to be 4)
         if color() == 1:
             blackSensorCheck += 1
         tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2) # (used 0.08)
@@ -401,18 +285,16 @@ def countBlackTile():
 
 # start at tile 1. If not, the math.ceil function will break
 def findBlackTile(desiredTile):
-    announce("find" + str(desiredTile))
     global currentTileNum
 
     while currentTileNum != desiredTile:  # until you find the desired tile
-
-        # if desired tile is BELOW the current row, need to travel DOWN
-        if math.ceil(desiredTile / 15) > math.ceil(currentTileNum / 15):
-            changeOrientation(180)
+        # if desired tile is ABOVE the current row, need to travel UP
+        if math.ceil(desiredTile / 15) < math.ceil(currentTileNum / 15):
+            changeOrientation(0)
             countBlackTile()  # then count squares until you find the tile
 
-        # if desired tile is ABOVE the current row, need to travel UP
-        elif math.ceil(desiredTile / 15) < math.ceil(currentTileNum / 15):
+        # if desired tile is BELOW the current row, need to travel DOWN
+        elif math.ceil(desiredTile / 15) > math.ceil(currentTileNum / 15):
             changeOrientation(180)
             countBlackTile()  # then count squares until you find the tile
 
@@ -439,8 +321,7 @@ def scanColumn(columnNumber):
     global towerCol  # towers column
 
     failureAddition = failures * 15  # NEEDS TO BE FIXED!!!!!!!! GOES TO 56 ON FAILURE 2.
-    if failures != 0:
-        announce(str(columnTiles[columnNumber] + failureAddition))
+
     findBlackTile(columnTiles[columnNumber] + failureAddition)
     changeOrientation(90)  # make sure its facing 90 degrees, may not be needed.
 
@@ -448,10 +329,11 @@ def scanColumn(columnNumber):
         tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive to center of tile
         rotateDegreesRight(90)  # turn right, to face down (180) to scan
         tempDist = ultrasonic()
+        rotateDegreesRight(-90)  # reverse the turn
         if tempDist < towerDist:  # if current distance is less than the last tower distance
             towerDist = tempDist  # then update the tower variables
             towerCol = columnNumber
-        rotateDegreesRight(-90)  # reverse the turn
+            return True
 
     else:  # if column 2 (with black tile in center of the big tile)
         changeOrientation(180)  # pivot to face down
@@ -459,31 +341,71 @@ def scanColumn(columnNumber):
         if tempDist < towerDist:  # if current distance is less than the last tower distance
             towerDist = tempDist  # then update the tower variables
             towerCol = columnNumber
+            return True
+    return False
+
+
+# SCANS DOWN THE TOWERS COLUMN
+def scanTowerColumn(rowNumber):
+    if towerCol == 1:  # scan 45 to right COLUMN 1
+        findBlackTile(57 + (rowNumber * 15))
+        changeOrientation(180)
+
+        tankRotateRight(30)
+        sleep(0.1)
+        tempDist = ultrasonic()
+        sleep(0.2)
+        tankRotateRight(-30)
+        if tempDist < 20:
+            return True
+        else:
+            return False
+
+    elif towerCol == 2:  # center COLUMN 2
+        findBlackTile(58 + (rowNumber * 15))
+        changeOrientation(180)
+
+        if ultrasonic() < 20:
+            return True
+        else:
+            return False
+
+    elif towerCol == 3:  # scan 45 to left COLUMN 3
+        findBlackTile(59 + (rowNumber * 15))
+        changeOrientation(180)
+
+        tankRotateLeft(30)
+        sleep(0.1)
+        tempDist = ultrasonic()
+        sleep(0.2)
+        tankRotateLeft(-30)
+        if tempDist < 20:
+            return True
+        else:
+            return False
+
+    else:
+        return False
 
 
 # seeks the tower by scanning each of the 3 tower tile columns, reports back the towers column
 def seekTower():
     global foundTower
+    global towerCol
+    global towerDist
+
     # scanning da tower
-    scanColumn(1)
-    scanColumn(2)
-    scanColumn(3)
+    for x in range(1, 4):
+        announce("scanning column" + str(x))
+        if scanColumn(x):
+            for y in range(4-failures):
+                if scanTowerColumn(y):
+                    return True
+    return False
 
-    # align with da column
-    if towerCol != 0:
-        findBlackTile(columnTiles[towerCol])
-        changeOrientation(180)
-        # scan all da columns tiles
-        for i in range(3 - failures):
-            if ultrasonic() < 10:
-                announce("found it")
-                foundTower = True
-                break
-            findBlackTile(currentTileNum + 15)
-
-    return foundTower
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
+
 
 # SEEK VARIABLES
 towerDist = 255
@@ -491,27 +413,26 @@ towerCol = 0
 failures = 0
 foundTower = False
 
+
 # CHANGEABLE VARIABLES
 orientation = 90 # 0, 90, 180, 270
 currentTileNum = 55
 
-# PROCESSES
-sound.play_file('start.wav')
-for i in range(3):
-    announce("loop " + str(i))
+
+# PROCESSES ---------------------------------
+
+# sound.play_file('start.wav')
+for i in range(4):
     if seekTower():
+        announce("fantastic")
+        announce("tile " + str(keyTiles[currentTileNum]))
+        announce("column " + str(towerCol))
+        # sound.play_file('victory.wav')
         break
     else:
         failures += 1
-
-if foundTower:
-    announce("fantastic")
-    announce("tile " + str(keyTiles[currentTileNum]))
-    announce("column " + str(towerCol))
-    sound.play_file('victory.wav')
-else:
-    announce("poo poo")
+announce("finished")
 
 """
-fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+
 """
