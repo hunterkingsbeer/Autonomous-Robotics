@@ -10,11 +10,8 @@
 #   3. The simulator can't really do text to speech, so announce will print it too, while also speaking it:
 #   Set SIMULATOR to false for speech to work on the robot.
 #
-# TODO: Calibration, Colour sensing (in more detail), generally the whole assignment lmao
-# TODO: Fix orientation
 
 SIMULATOR = False
-# Speech pauses now handled in the announce variable itself. Defaults to pause
 
 # Imports
 
@@ -22,7 +19,7 @@ import math
 from time import sleep, time, ctime
 
 from ev3dev2.motor import LargeMotor, OUTPUT_B, OUTPUT_C, SpeedPercent, MoveTank, MoveSteering
-from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor, TouchSensor
+from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor
 from ev3dev2.sound import Sound
 
 # Initialize dictionaries
@@ -73,33 +70,23 @@ keyTiles = {
 }
 
 # Initialize objects and constants. Nothing in here should cause the robot to move.
-ULTRASONICTRUEMAX = 255.0  # Highest possible distance the ultrasonic can detect.
-TURN90 = 48.555  # Motor value for 90 degree turn. Matt's solution.
-TURN90ROTATIONS = 0  # ninetyDegreeTurnRotations???????? huh????
 
 sound = Sound()
 mLeft = LargeMotor(OUTPUT_B)
 mRight = LargeMotor(OUTPUT_C)
 sColor = ColorSensor()
 sSonic = UltrasonicSensor()
-sTouch = TouchSensor()
 
 steering_drive = MoveSteering(OUTPUT_B, OUTPUT_C)
 tank_drive = MoveTank(OUTPUT_B, OUTPUT_C)
 
 # Initialize common public variables
-
-squareCurrent = 0  # currentSquare
-squareLength = 0
-squareXdis = 0  # bSquareXdis
-squareYdis = 0  # bSquareYdis
-squaresX = 0  # xSquares
-squaresY = 0  # ySquares
-
+# If you're up here because of a warning, pleeeease leave these alone. Yes they may have been set before/after,
+# but if we forget to set them on the day, these should correspond to the right values for a successful test.
 orientation = 0
-currentTileNum = 0
+currentTileNum = 1
 goal = False
-
+foundTower = False
 
 def announce(string, pause=True):
     print(string)
@@ -121,27 +108,14 @@ def halt():
     mRight.on(0)
 
 
-def goTillTouch():  # Experimental and hopefully functional!
-    motorSpeed(15)
-    sTouch.wait_for_pressed()
-    motorSpeed(0)
-
-
 
 def luminance(groundTuple):
     return (groundTuple[0] * 0.2126) + (groundTuple[1] * 0.7152) + (groundTuple[2] * 0.0722)
 
 
-# Not dealing with this for now because it seems as though the color sensor automatically calibrates (DEPENDING ON MODE)
-"""def calibrate(orientation):
-    orientation = turnClockwise(orientation)
-    ULTRASONICTRUEMAX=2
-    return orientation"""
-
-
 def ultrasonic():  # Alias that calls the ultrasonic sensor. This function exists so we can change it later.
-    sleep(0.125)
-    n = sSonic.distance_centimeters  # Supposedly, the ultrasonic sensor locks up when checked more than 1/100ms
+    sleep(0.125) # Supposedly, the ultrasonic sensor locks up when checked more than 1/100ms
+    n = sSonic.distance_centimeters
     return n
 
 
@@ -155,7 +129,7 @@ def log(s=""):
     f.write("\n" + ctime(time()) + " " + str(s))
     f.close()
 
-def routeLog(s=""):
+def routeLog(s=""): # I don't think we'll end up using this
     f = open("routeLog.txt", "a")
     f.write(str(s)+", ")
     f.close()
