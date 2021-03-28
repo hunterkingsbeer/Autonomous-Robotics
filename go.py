@@ -10,8 +10,11 @@
 #   3. The simulator can't really do text to speech, so announce will print it too, while also speaking it:
 #   Set SIMULATOR to false for speech to work on the robot.
 #
+# TODO: Calibration, Colour sensing (in more detail), generally the whole assignment lmao
+# TODO: Fix orientation
 
 SIMULATOR = False
+# Speech pauses now handled in the announce variable itself. Defaults to pause
 
 # Imports
 
@@ -19,7 +22,7 @@ import math
 from time import sleep, time, ctime
 
 from ev3dev2.motor import LargeMotor, OUTPUT_B, OUTPUT_C, SpeedPercent, MoveTank, MoveSteering
-from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor
+from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor, TouchSensor
 from ev3dev2.sound import Sound
 
 # Initialize dictionaries
@@ -32,61 +35,33 @@ deltaTiles = {  # Orientations to delta tile positions. Usage would be tile+=del
 }
 
 columnTiles = {
-    1: 56,
-    2: 58,
-    3: 59,
-    4: 71,
-    5: 73,
-    6: 74,
-    7: 86,
-    8: 88,
-    9: 89,
-    10: 101,
-    11: 103,
-    12: 104
+    1: 56, 2: 58, 3: 59,
+    4: 71, 5: 73, 6: 74,
+    7: 86, 8: 88, 9: 89,
+    10: 101, 11: 103, 12: 104
 }
 
 keyTiles = {
-    56: 1,
-    57: 1,
-    58: 2,
-    59: 3,
-    60: 3,
-    71: 4,
-    72: 4,
-    73: 5,
-    74: 6,
-    75: 6,
-    86: 7,
-    87: 7,
-    88: 8,
-    89: 9,
-    90: 9,
-    101: 10,
-    102: 10,
-    103: 11,
-    104: 12,
-    105: 12
+    56: 1, 57: 1, 58: 2, 59: 3, 60: 3,
+    71: 4, 72: 4, 73: 5, 74: 6, 75: 6,
+    86: 7, 87: 7, 88: 8, 89: 9, 90: 9,
+    101: 10, 102: 10, 103: 11, 104: 12, 105: 12
 }
 
 # Initialize objects and constants. Nothing in here should cause the robot to move.
+ULTRASONICTRUEMAX = 255.0  # Highest possible distance the ultrasonic can detect.
+TURN90 = 48.555  # Motor value for 90 degree turn. Matt's solution.
+TURN90ROTATIONS = 0  # ninetyDegreeTurnRotations???????? huh????
 
 sound = Sound()
 mLeft = LargeMotor(OUTPUT_B)
 mRight = LargeMotor(OUTPUT_C)
 sColor = ColorSensor()
 sSonic = UltrasonicSensor()
+sTouch = TouchSensor()
 
 steering_drive = MoveSteering(OUTPUT_B, OUTPUT_C)
 tank_drive = MoveTank(OUTPUT_B, OUTPUT_C)
-
-# Initialize common public variables
-# If you're up here because of a warning, pleeeease leave these alone. Yes they may have been set before/after,
-# but if we forget to set them on the day, these should correspond to the right values for a successful test.
-orientation = 0
-currentTileNum = 1
-goal = False
-foundTower = False
 
 def announce(string, pause=True):
     print(string)
@@ -108,14 +83,27 @@ def halt():
     mRight.on(0)
 
 
+def goTillTouch():  # Experimental and hopefully functional!
+    motorSpeed(15)
+    sTouch.wait_for_pressed()
+    motorSpeed(0)
+
+
 
 def luminance(groundTuple):
     return (groundTuple[0] * 0.2126) + (groundTuple[1] * 0.7152) + (groundTuple[2] * 0.0722)
 
 
+# Not dealing with this for now because it seems as though the color sensor automatically calibrates (DEPENDING ON MODE)
+"""def calibrate(orientation):
+    orientation = turnClockwise(orientation)
+    ULTRASONICTRUEMAX=2
+    return orientation"""
+
+
 def ultrasonic():  # Alias that calls the ultrasonic sensor. This function exists so we can change it later.
-    sleep(0.125) # Supposedly, the ultrasonic sensor locks up when checked more than 1/100ms
-    n = sSonic.distance_centimeters
+    sleep(0.125)
+    n = sSonic.distance_centimeters  # Supposedly, the ultrasonic sensor locks up when checked more than 1/100ms
     return n
 
 
@@ -129,7 +117,7 @@ def log(s=""):
     f.write("\n" + ctime(time()) + " " + str(s))
     f.close()
 
-def routeLog(s=""): # I don't think we'll end up using this
+def routeLog(s=""):
     f = open("routeLog.txt", "a")
     f.write(str(s)+", ")
     f.close()
@@ -377,6 +365,32 @@ def seekTower():
                     return True
     return False
 
+def correct():
+    global correctionsTotal
+
+    leftDegrees=0
+    rightDegrees=0
+
+    for i in range(90):
+        rotateDegreesLeft(1)
+        if color() != 1:
+            rotateDegreesLeft(-i)
+            leftDegrees = i
+            break
+
+    for i in range(90):
+        rotateDegreesRight(1)
+        if color() != 1:
+            rotateDegreesRight(-i)
+            rightDegrees = i
+            break
+    if leftDegrees > rightDegrees:
+        rotateDegreesLeft(leftDegrees - rightDegrees)
+        correctionsTotal -= (leftDegrees - rightDegrees)  # If the robot is facing 0, +ve numbers are right, so we subtract
+    elif rightDegrees > leftDegrees:
+        rotateDegreesRight(rightDegrees - leftDegrees)
+        correctionsTotal += (rightDegrees - leftDegrees)  # If the robot is facing 0, +ve numbers are right, so we add
+
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
 
@@ -391,6 +405,7 @@ foundTower = False
 # CHANGEABLE VARIABLES
 orientation = 90 # 0, 90, 180, 270
 currentTileNum = 55
+correctionsTotal = 0
 
 
 # PROCESSES ---------------------------------
@@ -408,5 +423,5 @@ for i in range(4):
 announce("finished")
 
 """
-
+ffff
 """
