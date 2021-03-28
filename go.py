@@ -392,18 +392,23 @@ def correct():
             rightDegrees = i * degreeAmount
             break
 
-    announce("left deg " + leftDegrees + " right deg " + rightDegrees)
+    announce("left scan " + str(leftDegrees))
+    announce("right scan " + str(rightDegrees))
 
-    if leftDegrees > rightDegrees and leftDegrees-rightDegrees > 5:
+    if leftDegrees > rightDegrees and abs(leftDegrees-rightDegrees) > 10:
         announce("l")
-        rotateDegreesLeft(leftDegrees - rightDegrees, True)
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
-        #correctionsTotal -= (leftDegrees - rightDegrees)  # If the robot is facing 0, +ve numbers are right, so we subtract
-    elif rightDegrees > leftDegrees and rightDegrees-leftDegrees > 5:
+        if leftDegrees-rightDegrees > 25:
+            rotateDegreesLeft(10, True)
+        else:
+            rotateDegreesLeft(leftDegrees - rightDegrees, True)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.6)
+    elif rightDegrees > leftDegrees and abs(rightDegrees-leftDegrees) > 10:
         announce("r")
-        rotateDegreesRight(rightDegrees - leftDegrees, True)
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
-        #correctionsTotal += (rightDegrees - leftDegrees)  # If the robot is facing 0, +ve numbers are right, so we add
+        if rightDegrees - leftDegrees > 25:
+            rotateDegreesRight(10, True)
+        else:
+            rotateDegreesRight(rightDegrees - leftDegrees, True)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.6)
 
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
