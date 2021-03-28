@@ -244,9 +244,9 @@ def countBlackTile():
                 currentTileNum += deltaTiles[orientation]
                 sleep(0.1)
                 foundBlackTile = True
-        if (orientation == 90 or orientation == 270) and luminance(sColor.raw) < 165 and luminance(sColor.raw) > 100:
+        if (orientation == 90 or orientation == 270) and 165 > luminance(sColor.raw) > 100 and sColor.reflected_light_intensity > 30:
             correct()
-        elif (orientation == 0 or orientation == 180) and luminance(sColor.raw) > 165:
+        elif (orientation == 0 or orientation == 180) and luminance(sColor.raw) > 165 and sColor.reflected_light_intensity > 30:
             correct()
 
 # drives until it can count another black tile, upon which it increments the current tile number.
@@ -404,17 +404,31 @@ def correct():
         if orientation == 90 or orientation == 270:
             lum = luminance(sColor.raw)
             tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.75)
-            while lum > 165 or lum < 100:
-                tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
-                if color() == 1:
-                    foundNextBlack = True
+            while not foundNextBlack and lum > 165 or lum < 100:
+                if orientation == 180:  # if robot is travelling down a column
+                    tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20),
+                                                0.3)  # drive forward more rotations
+                else:  # else robot is travelling across a row
+                    tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward
+                if color() == 1:  # then check if its a black square, and verify
+                    if checkIfBlackTile():  #
+                        currentTileNum += deltaTiles[orientation]
+                        sleep(0.1)
+                        foundNextBlack = True
         elif orientation == 0 or orientation == 180:
             lum = luminance(sColor.raw)
             tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.75)
-            while lum < 165:
-                tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
-                if color() == 1:
-                    foundNextBlack = True
+            while not foundNextBlack and lum < 165:
+                if orientation == 180:  # if robot is travelling down a column
+                    tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20),
+                                                0.3)  # drive forward more rotations
+                else:  # else robot is travelling across a row
+                    tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward
+                if color() == 1:  # then check if its a black square, and verify
+                    if checkIfBlackTile():  #
+                        currentTileNum += deltaTiles[orientation]
+                        sleep(0.1)
+                        foundNextBlack = True
         if foundNextBlack:
             break
 
@@ -425,7 +439,7 @@ def correct():
             rotateDegreesLeft(rotateDegree, True)
             leftTurn = True
 
-        rotateDegree += 10;
+        rotateDegree += 10
     return
 
 
