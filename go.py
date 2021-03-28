@@ -405,13 +405,13 @@ def correct():
     #announce("left scan " + str(leftDegrees))
     #announce("right scan " + str(rightDegrees))
 #
-    if leftDegrees > rightDegrees and abs(leftDegrees-rightDegrees) > 10:
+    if leftDegrees > rightDegrees and abs(leftDegrees-rightDegrees) > 1:
         announce("l")
         if abs(leftDegrees-rightDegrees) >= 10:
             rotateDegreesLeft(10, True)
         else:
             rotateDegreesLeft(leftDegrees - rightDegrees, True)
-    elif rightDegrees > leftDegrees and abs(rightDegrees-leftDegrees) > 10:
+    elif rightDegrees > leftDegrees and abs(rightDegrees-leftDegrees) > 1:
         announce("r")
         if abs(rightDegrees - leftDegrees) >= 10:
             rotateDegreesRight(10, True)
