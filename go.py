@@ -233,16 +233,22 @@ def checkIfBlackTile():
 def countBlackTile():
     global currentTileNum
     foundBlackTile = False
+    foundWhiteAgain = False
 
     while not foundBlackTile:  # while its not on a black square
         if orientation == 180: # if robot is travelling down a column
-            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.3)  # drive forward more rotations
+            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.35)  # drive forward more rotations
         else: # else robot is travelling across a row
             tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward
-        if color() == 1:  # then check if its a black square, and verify
-            if checkIfBlackTile():#
-                if currentTileNum % 2 == 0:
+
+        if color() != 1:
+            foundWhiteAgain = True
+        if color() == 1 and foundWhiteAgain:  # then check if its a black square, and verify
+            if checkIfBlackTile():
+                if currentTileNum % 2 == 0 or orientation == 180:
                     correct()
+                    if orientation != 180:
+                        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.65)
                 currentTileNum += deltaTiles[orientation]
                 sleep(0.1)
                 foundBlackTile = True
@@ -377,39 +383,40 @@ def correct():
 
     degreeAmount = 5
 
-    announce("scanning left")
+    # announce("scanning left")
     for i in range(int(90 / degreeAmount)):
         rotateDegreesLeft(degreeAmount, True)
         if color() != 1:
             rotateDegreesLeft(-i * degreeAmount, True)
             leftDegrees = i * degreeAmount
             break
+        if i == int(90 / degreeAmount)-1:
+            rotateDegreesLeft(-i * degreeAmount, True)
 
-    announce("scanning right")
+    # announce("scanning right")
     for i in range(int(90 / degreeAmount)):
         rotateDegreesRight(degreeAmount, True)
         if color() != 1:
             rotateDegreesRight(-i * degreeAmount, True)
             rightDegrees = i * degreeAmount
             break
-
-    announce("left scan " + str(leftDegrees))
-    announce("right scan " + str(rightDegrees))
+        if i == (90 / degreeAmount)-1:
+            rotateDegreesRight(-i * degreeAmount, True)
+    #announce("left scan " + str(leftDegrees))
+    #announce("right scan " + str(rightDegrees))
 #
-    if leftDegrees > rightDegrees and abs(leftDegrees-rightDegrees) > 10:
+    if leftDegrees > rightDegrees and abs(leftDegrees-rightDegrees) > 1:
         announce("l")
-        if abs(leftDegrees-rightDegrees) >= 15:
+        if abs(leftDegrees-rightDegrees) >= 10:
             rotateDegreesLeft(10, True)
         else:
             rotateDegreesLeft(leftDegrees - rightDegrees, True)
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.6)
-    elif rightDegrees > leftDegrees and abs(rightDegrees-leftDegrees) > 10:
+    elif rightDegrees > leftDegrees and abs(rightDegrees-leftDegrees) > 1:
         announce("r")
-        if abs(rightDegrees - leftDegrees) >= 15:
+        if abs(rightDegrees - leftDegrees) >= 10:
             rotateDegreesRight(10, True)
         else:
             rotateDegreesRight(rightDegrees - leftDegrees, True)
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.6)#
 
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
@@ -423,17 +430,17 @@ foundTower = False
 
 
 # CHANGEABLE VARIABLES
-orientation = 90 # 0, 90, 180, 270
+orientation = 0 # 0, 90, 180, 270
 currentTileNum = 1
 correctionsTotal = 0
 
 
 # PROCESSES ---------------------------------
 
-findBlackTile(14)
+#findBlackTile(14)
 
-"""
 # sound.play_file('start.wav')
+announce("wowwow")
 for i in range(4):
     if seekTower():
         announce("fantastic")
@@ -444,8 +451,8 @@ for i in range(4):
     else:
         failures += 1
 announce("finished")
-"""
+
 
 """
-fffffffff
+ffffffffffffffffff
 """
