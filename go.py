@@ -124,29 +124,30 @@ def routeLog(s=""):
 
 
 # rotates right wheel forward, to turn left
-def rotateDegreesLeft(degrees):
+def rotateDegreesLeft(degrees, correcting=False):
     amount = 0.94 / 90
     mRight.on_for_rotations(SpeedPercent(20), amount * degrees)
     sleep(0.1)
 
-    global orientation
-    orientation -= degrees
-    if orientation < 0:
-        orientation = 360 - orientation
-    orientation = orientation % 360
+    if not correcting:
+        global orientation
+        orientation -= degrees
+        if orientation < 0:
+            orientation = 360 - orientation
+        orientation = orientation % 360
 
 
 # rotates left wheel forward, to turn right
-def rotateDegreesRight(degrees):
+def rotateDegreesRight(degrees, correcting=False):
     amount = 0.94 / 90
     mLeft.on_for_rotations(SpeedPercent(20), amount * degrees)
     sleep(0.1)
-
-    global orientation
-    orientation += degrees
-    if orientation < 0:
-        orientation = 360 - orientation
-    orientation = orientation % 360
+    if not correcting:
+        global orientation
+        orientation += degrees
+        if orientation < 0:
+            orientation = 360 - orientation
+        orientation = orientation % 360
 
 
 # rotates left wheel backwards, to turn left
@@ -219,7 +220,7 @@ def checkIfBlackTile():
     for i in range(2):  # (value used to be 4)
         if color() == 1:
             blackSensorCheck += 1
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2) # (used 0.08)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.08) # (used 0.08)
         sleep(0.1)
 
     if blackSensorCheck >= 2: # If 2 checks showed black, its a black square. (value used to be 4)
@@ -366,33 +367,43 @@ def seekTower():
                     return True
     return False
 
+
 def correct():
     global correctionsTotal
 
     leftDegrees=0
     rightDegrees=0
 
+    degreeAmount = 5
+
     announce("scanning left")
-    for i in range(30):
-        rotateDegreesLeft(3)
+    for i in range(int(90 / degreeAmount)):
+        rotateDegreesLeft(degreeAmount)
         if color() != 1:
-            rotateDegreesLeft(-i)
-            leftDegrees = i
+            rotateDegreesLeft(-i * degreeAmount)
+            leftDegrees = i * degreeAmount
             break
 
     announce("scanning right")
-    for i in range(30):
-        rotateDegreesRight(3)
+    for i in range(int(90 / degreeAmount)):
+        rotateDegreesRight(degreeAmount)
         if color() != 1:
-            rotateDegreesRight(-i)
-            rightDegrees = i
+            rotateDegreesRight(-i * degreeAmount)
+            rightDegrees = i * degreeAmount
             break
-    if leftDegrees > rightDegrees:
-        rotateDegreesLeft(leftDegrees - rightDegrees)
-        correctionsTotal -= (leftDegrees - rightDegrees)  # If the robot is facing 0, +ve numbers are right, so we subtract
-    elif rightDegrees > leftDegrees:
-        rotateDegreesRight(rightDegrees - leftDegrees)
-        correctionsTotal += (rightDegrees - leftDegrees)  # If the robot is facing 0, +ve numbers are right, so we add
+
+    announce("left deg " + leftDegrees + " right deg " + rightDegrees)
+
+    if leftDegrees > rightDegrees and leftDegrees-rightDegrees > 5:
+        announce("l")
+        rotateDegreesLeft(leftDegrees - rightDegrees, True)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
+        #correctionsTotal -= (leftDegrees - rightDegrees)  # If the robot is facing 0, +ve numbers are right, so we subtract
+    elif rightDegrees > leftDegrees and rightDegrees-leftDegrees > 5:
+        announce("r")
+        rotateDegreesRight(rightDegrees - leftDegrees, True)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
+        #correctionsTotal += (rightDegrees - leftDegrees)  # If the robot is facing 0, +ve numbers are right, so we add
 
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
@@ -428,6 +439,7 @@ for i in range(4):
         failures += 1
 announce("finished")
 """
+
 """
-ffff
+fffffffff
 """
