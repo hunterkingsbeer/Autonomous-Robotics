@@ -240,14 +240,33 @@ def countBlackTile():
         else: # else robot is travelling across a row
             tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward
         if color() == 1:  # then check if its a black square, and verify
-            if checkIfBlackTile():
+            if checkIfBlackTile():#
                 currentTileNum += deltaTiles[orientation]
-                correct()
+                sleep(0.1)
+                foundBlackTile = True
+        if (orientation == 90 or orientation == 270) and luminance(sColor.raw) < 165 and luminance(sColor.raw) > 100:
+            correct()
+        elif (orientation == 0 or orientation == 180) and luminance(sColor.raw) > 165:
+            correct()
+
+# drives until it can count another black tile, upon which it increments the current tile number.
+def countBlackTileReverse():
+    global currentTileNum
+    foundBlackTile = False
+
+    while not foundBlackTile:  # while its not on a black square
+        if orientation == 180: # if robot is travelling down a column
+            tank_drive.on_for_rotations(SpeedPercent(-20), SpeedPercent(-20), 0.3)  # drive forward more rotations
+        else: # else robot is travelling across a row
+            tank_drive.on_for_rotations(SpeedPercent(-20), SpeedPercent(-20), 0.2)  # drive forward
+        if color() == 1:  # then check if its a black square, and verify
+            if checkIfBlackTile():#
+                currentTileNum -= deltaTiles[orientation]
                 sleep(0.1)
                 foundBlackTile = True
 
 
-# start at tile 1. If not, the math.ceil function will break
+# start at tile 1. If not, the math.ceil function will break #
 def findBlackTile(desiredTile):
     global currentTileNum
 
@@ -371,45 +390,43 @@ def seekTower():
 def correct():
     global correctionsTotal
 
-    leftDegrees=0
-    rightDegrees=0
+    countBlackTileReverse()
+    rotateDegree = 15
+    foundNextBlack = False
+    leftTurn = True
 
-    degreeAmount = 5
+    while not foundNextBlack:
+        if leftTurn:
+            rotateDegreesLeft(rotateDegree, True)
+        else:
+            rotateDegreesRight(rotateDegree, True)
 
-    announce("scanning left")
-    for i in range(int(90 / degreeAmount)):
-        rotateDegreesLeft(degreeAmount)
-        if color() != 1:
-            rotateDegreesLeft(-i * degreeAmount)
-            leftDegrees = i * degreeAmount
+        if orientation == 90 or orientation == 270:
+            lum = luminance(sColor.raw)
+            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.75)
+            while lum > 165 or lum < 100:
+                tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
+                if color() == 1:
+                    foundNextBlack = True
+        elif orientation == 0 or orientation == 180:
+            lum = luminance(sColor.raw)
+            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.75)
+            while lum < 165:
+                tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
+                if color() == 1:
+                    foundNextBlack = True
+        if foundNextBlack:
             break
 
-    announce("scanning right")
-    for i in range(int(90 / degreeAmount)):
-        rotateDegreesRight(degreeAmount)
-        if color() != 1:
-            rotateDegreesRight(-i * degreeAmount)
-            rightDegrees = i * degreeAmount
-            break
+        if leftTurn:
+            rotateDegreesRight(rotateDegree, True)
+            leftTurn = False
+        else:
+            rotateDegreesLeft(rotateDegree, True)
+            leftTurn = True
 
-    announce("left deg " + leftDegrees + " right deg " + rightDegrees)
-
-    leftDiff = math.abs(leftDegrees-rightDegrees)
-    rightDiff = math.abs(rightDegrees-leftDegrees)
-    if leftDegrees > rightDegrees and leftDiff > 10:
-        announce("l")
-        if (leftDiff > 10):
-            leftdiff = 10
-        rotateDegreesLeft(leftDiff, True)
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
-        #correctionsTotal -= (leftDegrees - rightDegrees)  # If the robot is facing 0, +ve numbers are right, so we subtract
-    elif rightDegrees > leftDegrees and math.abs(rightDegrees-leftDegrees) > 10:
-        announce("r")
-        if (rightDiff > 10):
-            rightDiff = 10
-        rotateDegreesRight(rightDiff, True)
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
-        #correctionsTotal += (rightDegrees - leftDegrees)  # If the robot is facing 0, +ve numbers are right, so we add
+        rotateDegree += 10;
+    return
 
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
