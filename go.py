@@ -242,12 +242,13 @@ def countBlackTile():
         if color() == 1:  # then check if its a black square, and verify
             if checkIfBlackTile():
                 currentTileNum += deltaTiles[orientation]
-                correct()
+                if currentTileNum % 2 == 0:
+                    correct()
                 sleep(0.1)
                 foundBlackTile = True
 
 
-# start at tile 1. If not, the math.ceil function will break
+# start at tile 1. If not, the math.ceil function will break # 
 def findBlackTile(desiredTile):
     global currentTileNum
 
@@ -378,37 +379,37 @@ def correct():
 
     announce("scanning left")
     for i in range(int(90 / degreeAmount)):
-        rotateDegreesLeft(degreeAmount)
+        rotateDegreesLeft(degreeAmount, True)
         if color() != 1:
-            rotateDegreesLeft(-i * degreeAmount)
+            rotateDegreesLeft(-i * degreeAmount, True)
             leftDegrees = i * degreeAmount
             break
 
     announce("scanning right")
     for i in range(int(90 / degreeAmount)):
-        rotateDegreesRight(degreeAmount)
+        rotateDegreesRight(degreeAmount, True)
         if color() != 1:
-            rotateDegreesRight(-i * degreeAmount)
+            rotateDegreesRight(-i * degreeAmount, True)
             rightDegrees = i * degreeAmount
             break
 
     announce("left scan " + str(leftDegrees))
     announce("right scan " + str(rightDegrees))
-
+#
     if leftDegrees > rightDegrees and abs(leftDegrees-rightDegrees) > 10:
         announce("l")
-        if leftDegrees-rightDegrees > 25:
+        if abs(leftDegrees-rightDegrees) >= 15:
             rotateDegreesLeft(10, True)
         else:
             rotateDegreesLeft(leftDegrees - rightDegrees, True)
         tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.6)
     elif rightDegrees > leftDegrees and abs(rightDegrees-leftDegrees) > 10:
         announce("r")
-        if rightDegrees - leftDegrees > 25:
+        if abs(rightDegrees - leftDegrees) >= 15:
             rotateDegreesRight(10, True)
         else:
             rotateDegreesRight(rightDegrees - leftDegrees, True)
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.6)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.6)#
 
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
