@@ -241,9 +241,9 @@ def countBlackTile():
             tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward
         if color() == 1:  # then check if its a black square, and verify
             if checkIfBlackTile():
-                currentTileNum += deltaTiles[orientation]
                 if currentTileNum % 2 == 0:
                     correct()
+                currentTileNum += deltaTiles[orientation]
                 sleep(0.1)
                 foundBlackTile = True
 
