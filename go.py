@@ -89,16 +89,8 @@ def goTillTouch():  # Experimental and hopefully functional!
     motorSpeed(0)
 
 
-
 def luminance(groundTuple):
     return (groundTuple[0] * 0.2126) + (groundTuple[1] * 0.7152) + (groundTuple[2] * 0.0722)
-
-
-# Not dealing with this for now because it seems as though the color sensor automatically calibrates (DEPENDING ON MODE)
-"""def calibrate(orientation):
-    orientation = turnClockwise(orientation)
-    ULTRASONICTRUEMAX=2
-    return orientation"""
 
 
 def ultrasonic():  # Alias that calls the ultrasonic sensor. This function exists so we can change it later.
@@ -220,7 +212,7 @@ def checkIfBlackTile():
     for i in range(2):  # (value used to be 4)
         if color() == 1:
             blackSensorCheck += 1
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.08) # (used 0.08)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.05)  # (used 0.08)
         sleep(0.1)
 
     if blackSensorCheck >= 2: # If 2 checks showed black, its a black square. (value used to be 4)
@@ -236,8 +228,8 @@ def countBlackTile():
     foundWhiteAgain = False
 
     while not foundBlackTile:  # while its not on a black square
-        if orientation == 180: # if robot is travelling down a column
-            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.35)  # drive forward more rotations
+        if orientation == 180:  # if robot is travelling down a column
+            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.3)  # drive forward more rotations
         else: # else robot is travelling across a row
             tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward
 
@@ -245,10 +237,10 @@ def countBlackTile():
             foundWhiteAgain = True
         if color() == 1 and foundWhiteAgain:  # then check if its a black square, and verify
             if checkIfBlackTile():
-                if currentTileNum % 2 == 0 or orientation == 180:
-                    correct()
-                    if orientation != 180:
-                        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.65)
+                if True:  #currentTileNum % 2 == 0 or orientation == 180:
+                    correction()  # ------------------------------------------------------------------------------------
+                    #if orientation != 180:
+                        #tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.65) -------------------------
                 currentTileNum += deltaTiles[orientation]
                 sleep(0.1)
                 foundBlackTile = True
@@ -392,6 +384,7 @@ def correct():
             break
         if i == int(90 / degreeAmount)-1:
             rotateDegreesLeft(-i * degreeAmount, True)
+            leftDegrees = i * degreeAmount
 
     # announce("scanning right")
     for i in range(int(90 / degreeAmount)):
@@ -402,21 +395,72 @@ def correct():
             break
         if i == (90 / degreeAmount)-1:
             rotateDegreesRight(-i * degreeAmount, True)
+            rightDegrees = i * degreeAmount
     #announce("left scan " + str(leftDegrees))
     #announce("right scan " + str(rightDegrees))
-#
-    if leftDegrees > rightDegrees and abs(leftDegrees-rightDegrees) > 1:
+
+    if leftDegrees > rightDegrees and abs(leftDegrees-rightDegrees) >= 5:
         announce("l")
+        announce("left" + str(leftDegrees))
+        announce("right" + str(rightDegrees))
+        announce("diff " + str(abs(leftDegrees-rightDegrees)))
         if abs(leftDegrees-rightDegrees) >= 10:
-            rotateDegreesLeft(10, True)
+            rotateDegreesLeft(8 if orientation == 180 else 10, True)
         else:
-            rotateDegreesLeft(leftDegrees - rightDegrees, True)
-    elif rightDegrees > leftDegrees and abs(rightDegrees-leftDegrees) > 1:
+            degAmount = leftDegrees - rightDegrees
+            rotateDegreesLeft(degAmount * 0.5 if orientation == 180 else degAmount, True)
+    elif rightDegrees > leftDegrees and abs(rightDegrees-leftDegrees) >= 5:
         announce("r")
+        announce("left" + str(leftDegrees))
+        announce("right" + str(rightDegrees))
+        announce("diff " + str(abs(leftDegrees - rightDegrees)))
         if abs(rightDegrees - leftDegrees) >= 10:
-            rotateDegreesRight(10, True)
+            rotateDegreesRight(8 if orientation == 180 else 10, True)
         else:
-            rotateDegreesRight(rightDegrees - leftDegrees, True)
+            degAmount = rightDegrees - leftDegrees
+            rotateDegreesRight(degAmount * 0.5 if orientation == 180 else degAmount, True)
+
+
+def correction():
+    searchArea = 40
+    left = 0
+    right = 0
+    multiplier = 1
+
+    if orientation == 180 or orientation == 0:
+        multiplier = 0.3
+
+    rotateDegreesLeft(searchArea / 2, True)  # 1/2 check left
+    if color() != 1:
+        left += 1
+    rotateDegreesLeft(searchArea / 2, True)  # 2/2 check left
+    if color() != 1:
+        left += 2
+    rotateDegreesLeft(-searchArea, True)
+
+    rotateDegreesRight(searchArea / 2, True)  # 1/2 check right
+    if color() != 1:
+        right += 1
+    rotateDegreesRight(searchArea / 2, True)  # 2/2 check right
+    if color() != 1:
+        right += 2
+    rotateDegreesRight(-searchArea, True)
+
+    if right > left:  # must be to the left of a black square
+        if right == 1:
+            rotateDegreesLeft(5 * multiplier, True)
+        elif right == 2:
+            rotateDegreesLeft(10 * multiplier, True)
+        elif right == 3:
+            rotateDegreesLeft(15 * multiplier, True)
+
+    elif left > right:  # must be to the left of a black square
+        if left == 1:
+            rotateDegreesRight(5 * multiplier, True)
+        elif left == 2:
+            rotateDegreesRight(10 * multiplier, True)
+        elif left == 3:
+            rotateDegreesRight(15 * multiplier, True)
 
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
@@ -437,7 +481,8 @@ correctionsTotal = 0
 
 # PROCESSES ---------------------------------
 
-#findBlackTile(14)
+#findBlackTile(106)
+
 
 # sound.play_file('start.wav')
 announce("wowwow")
@@ -454,5 +499,5 @@ announce("finished")
 
 
 """
-ffffffffffffffffff
+ffffffffffffffffffffff
 """
