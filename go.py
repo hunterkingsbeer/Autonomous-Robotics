@@ -422,14 +422,34 @@ def correct():
 
 
 def correction():
-    searchArea = 40
-    left = 0
-    right = 0
-    multiplier = 1
+    searchArea = 40  # 40 degrees search
+    left = 0  # left counter
+    right = 0  # right counter
+    multiplier = 1  # multiplier for orientation based corrections, 1 for 90/270, and 0.3 for 0/180
 
-    if orientation == 180 or orientation == 0:
-        multiplier = 0.3
+    if orientation == 180 or orientation == 0:  # set multiplier for orientation correctly
+        multiplier = 0.3  # needs to be less to account for further distance between black tiles
 
+    # check left, 2 times
+    for i in range(1, 3):
+        rotateDegreesLeft(searchArea / 2, True)
+        if color() != 1:
+            left += i  # try 1: +1, try 2: +2
+    rotateDegreesLeft(-searchArea, True)  # return to initial position
+
+    # check right, 2 times
+    for i in range(1, 3):
+        rotateDegreesRight(searchArea / 2, True)
+        if color() != 1:
+            right += i  # try 1: +1, try 2: +2
+    rotateDegreesRight(-searchArea, True)  # return to initial position
+
+    if right > left:  # must be to the RIGHT side of a black square, TURN LEFT
+        rotateDegreesLeft((5 * right) * multiplier, True)
+    elif left > right:  # must be to the LEFT side of a black square, TURN RIGHT
+        rotateDegreesRight((5 * left) * multiplier, True)
+
+    """
     rotateDegreesLeft(searchArea / 2, True)  # 1/2 check left
     if color() != 1:
         left += 1
@@ -460,7 +480,7 @@ def correction():
         elif left == 2:
             rotateDegreesRight(10 * multiplier, True)
         elif left == 3:
-            rotateDegreesRight(15 * multiplier, True)
+            rotateDegreesRight(15 * multiplier, True)"""
 
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
@@ -476,7 +496,7 @@ foundTower = False
 # CHANGEABLE VARIABLES
 orientation = 0 # 0, 90, 180, 270
 currentTileNum = 1
-correctionsTotal = 0
+# correctionsTotal = 0
 
 
 # PROCESSES ---------------------------------
@@ -485,7 +505,6 @@ correctionsTotal = 0
 
 
 # sound.play_file('start.wav')
-announce("wowwow")
 for i in range(4):
     if seekTower():
         announce("fantastic")
