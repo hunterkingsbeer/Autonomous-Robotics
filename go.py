@@ -241,6 +241,7 @@ def countBlackTile():
         if color() == 1:  # then check if its a black square, and verify
             if checkIfBlackTile():
                 currentTileNum += deltaTiles[orientation]
+                correct()
                 sleep(0.1)
                 foundBlackTile = True
 
@@ -371,15 +372,17 @@ def correct():
     leftDegrees=0
     rightDegrees=0
 
-    for i in range(90):
-        rotateDegreesLeft(1)
+    announce("scanning left")
+    for i in range(30):
+        rotateDegreesLeft(3)
         if color() != 1:
             rotateDegreesLeft(-i)
             leftDegrees = i
             break
 
-    for i in range(90):
-        rotateDegreesRight(1)
+    announce("scanning right")
+    for i in range(30):
+        rotateDegreesRight(3)
         if color() != 1:
             rotateDegreesRight(-i)
             rightDegrees = i
@@ -404,12 +407,15 @@ foundTower = False
 
 # CHANGEABLE VARIABLES
 orientation = 90 # 0, 90, 180, 270
-currentTileNum = 55
+currentTileNum = 1
 correctionsTotal = 0
 
 
 # PROCESSES ---------------------------------
 
+findBlackTile(14)
+
+"""
 # sound.play_file('start.wav')
 for i in range(4):
     if seekTower():
@@ -421,7 +427,7 @@ for i in range(4):
     else:
         failures += 1
 announce("finished")
-
+"""
 """
 ffff
 """
