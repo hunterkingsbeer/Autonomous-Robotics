@@ -303,7 +303,7 @@ def correction():
     multiplier = 1  # multiplier for orientation based corrections, 1 for 90/270, and 0.3 for 0/180
 
     if orientation == 180 or orientation == 0:  # set multiplier for orientation correctly
-        multiplier = 0.3  # needs to be less to account for further distance between black tiles when travelling down
+        multiplier = 0.25  # needs to be less to account for further distance between black tiles when travelling down
 
     # check left, 2 times
     for i in range(1, 3):
