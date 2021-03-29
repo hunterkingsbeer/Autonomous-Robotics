@@ -170,14 +170,14 @@ def countBlackTile():
     foundWhiteAgain = False
 
     while not foundBlackTile:  # to ensure we dont double scan we need to see white before verifying black
-        if color() != 1:  # when white, toggle
+        if color() == 6:  # when white, toggle
             foundWhiteAgain = True
 
         if orientation == 180:  # if robot is travelling down a column
-            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.15)  # drive forward more rotations
-        else: # else robot is travelling across a row
+            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.12)  # drive forward more rotations
+        else:  # else robot is travelling across a row
             tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.1)  # drive forward
-        sleep(0.1)
+        sleep(0.2)
         if color() == 1 and foundWhiteAgain:  # then check if its a black square, and verify
             if checkIfBlackTile():
                 currentTileNum += deltaTiles[orientation]
@@ -314,7 +314,7 @@ def correction():
     # check left, 2 times
     for i in range(1, 3):
         rotateDegreesLeft(searchArea / 2, True)
-        if color() != 1:
+        if color() == 6:
             #   announce(str(i))
             left += i  # try 1: +1, try 2: +2
     rotateDegreesLeft(-searchArea, True)  # return to initial position before scan
@@ -322,7 +322,7 @@ def correction():
     # check right, 2 times
     for i in range(1, 3):
         rotateDegreesRight(searchArea / 2, True)
-        if color() != 1:
+        if color() == 6:
             #announce(str(i))
             right += i  # try 1: +1, try 2: +2
     rotateDegreesRight(-searchArea, True)  # return to initial position before scan
@@ -360,7 +360,7 @@ scannedCol3 = False
 degreeAmount = 0.938 / 90
 
 
-# MAIN PROCESSES ------------------------------
+# MAIN PROCESSES --------------------------------
 
 
 calibrate()
