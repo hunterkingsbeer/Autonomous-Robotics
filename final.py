@@ -1,29 +1,14 @@
 #!/usr/bin/env python3
-# LEAVE THE ABOVE LINE ALONE.
-
-# === TROUBLESHOOTING ===
-#   1. On the bottom right, on the lowest bar of the GUI, make sure it says LF and not CRLF or CR (click it to change)
-#
-#   2. A change MUST be made for pycharm to sync EVEN IF THE FILE IS NO LONGER PRESENT ON THE ROBOT...
-#   even if the upload fails. Add a dummy comment to fix.
-#
-#   3. The simulator can't really do text to speech, so announce will print it too, while also speaking it:
-#   Set SIMULATOR to false for speech to work on the robot.
-#
-# TODO: Calibration, Colour sensing (in more detail), generally the whole assignment lmao
-# TODO: Fix orientation
-
-SIMULATOR = False
-# Speech pauses now handled in the announce variable itself. Defaults to pause
 
 # Imports
-
 import math
 from time import sleep, time, ctime
 
 from ev3dev2.motor import LargeMotor, OUTPUT_B, OUTPUT_C, SpeedPercent, MoveTank, MoveSteering
 from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor
 from ev3dev2.sound import Sound
+
+SIMULATOR = False
 
 # Initialize dictionaries
 deltaTiles = {  # Orientations to delta tile positions. Usage would be tile+=deltaTiles[orientation]
@@ -48,11 +33,6 @@ keyTiles = {
     101: 10, 102: 10, 103: 11, 104: 12, 105: 12
 }
 
-# Initialize objects and constants. Nothing in here should cause the robot to move.
-ULTRASONICTRUEMAX = 255.0  # Highest possible distance the ultrasonic can detect.
-TURN90 = 48.555  # Motor value for 90 degree turn. Matt's solution.
-TURN90ROTATIONS = 0  # ninetyDegreeTurnRotations???????? huh????
-
 sound = Sound()
 mLeft = LargeMotor(OUTPUT_B)
 mRight = LargeMotor(OUTPUT_C)
@@ -62,6 +42,7 @@ sSonic = UltrasonicSensor()
 steering_drive = MoveSteering(OUTPUT_B, OUTPUT_C)
 tank_drive = MoveTank(OUTPUT_B, OUTPUT_C)
 
+
 def announce(string, pause=True):
     print(string)
     if SIMULATOR is False:
@@ -70,10 +51,6 @@ def announce(string, pause=True):
         else:
             sound.speak(string)
     log(string)
-
-
-def luminance(groundTuple):
-    return (groundTuple[0] * 0.2126) + (groundTuple[1] * 0.7152) + (groundTuple[2] * 0.0722)
 
 
 def ultrasonic():  # returns the current ultrasonic distance
@@ -91,6 +68,7 @@ def log(s=""):
     f = open("log.txt", "a")
     f.write("\n" + ctime(time()) + " " + str(s))
     f.close()
+
 
 def routeLog(s=""):
     f = open("routeLog.txt", "a")
@@ -188,26 +166,23 @@ def countBlackTile():
     foundBlackTile = False
     foundWhiteAgain = False
 
-    while not foundBlackTile:  # while its not on a black square
+    while not foundBlackTile:  # to ensure we dont double scan we need to see white before verifying black
+        if color() != 1:  # when white, toggle
+            foundWhiteAgain = True
+
         if orientation == 180:  # if robot is travelling down a column
             tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.3)  # drive forward more rotations
         else: # else robot is travelling across a row
             tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward
 
-        if color() != 1:
-            foundWhiteAgain = True
         if color() == 1 and foundWhiteAgain:  # then check if its a black square, and verify
             if checkIfBlackTile():
-                if True:  #currentTileNum % 2 == 0 or orientation == 180:
-                    correction()  # ------------------------------------------------------------------------------------
-                    #if orientation != 180:
-                        #tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.65) -------------------------
+                correction()
                 currentTileNum += deltaTiles[orientation]
-                sleep(0.1)
                 foundBlackTile = True
 
 
-# start at tile 1. If not, the math.ceil function will break # 
+# start at tile 1. If not, the math.ceil function will break #
 def findBlackTile(desiredTile):
     global currentTileNum
 
@@ -240,11 +215,50 @@ def findBlackTile(desiredTile):
         announce("ROW " + math.ceil(currentTileNum / 15))
 
 
+# Checks if tower is within reasonable distance. Returns true if distance put in is less than 20cm, false if not.
+def isTower(distance):
+    if distance < 20:
+        return True
+    else:
+        return False
+
+
+# SCANS DOWN THE TOWERS COLUMN
+def scanTowerColumn(rowNumber):
+    if towerCol == 1:
+        findBlackTile(57 + (rowNumber * 15))
+        changeOrientation(180)
+
+        tankRotateRight(30)
+        #sleep(0.1)
+        tempDist = ultrasonic()
+        #sleep(0.2)
+        tankRotateRight(-30)
+        return isTower(tempDist)
+
+    elif towerCol == 2:
+        findBlackTile(58 + (rowNumber * 15))
+        changeOrientation(180)
+        return isTower(ultrasonic())
+
+    elif towerCol == 3:
+        findBlackTile(59 + (rowNumber * 15))
+        changeOrientation(180)
+
+        tankRotateLeft(30)
+        sleep(0.1)
+        tempDist = ultrasonic()
+        sleep(0.2)
+        tankRotateLeft(-30)
+        return isTower(tempDist)
+    else:
+        return False
+
+# searches down column to look for the
 def scanColumn(columnNumber):
     global towerDist  # towers distance
     global towerCol  # towers column
-
-    failureAddition = failures * 15
+    failureAddition = failures * 15  # num of failures = row to scanning, use this to get its failure addition
 
     findBlackTile(columnTiles[columnNumber] + failureAddition)
     changeOrientation(90)  # make sure its facing 90 degrees, may not be needed.
@@ -269,111 +283,15 @@ def scanColumn(columnNumber):
     return False
 
 
-# SCANS DOWN THE TOWERS COLUMN
-def scanTowerColumn(rowNumber):
-    if towerCol == 1:  # scan 30 to right COLUMN 1
-        findBlackTile(57 + (rowNumber * 15))
-        changeOrientation(180)
-
-        tankRotateRight(30)
-        sleep(0.1)
-        tempDist = ultrasonic()
-        sleep(0.2)
-        tankRotateRight(-30)
-        if tempDist < 20:
-            return True
-        else:
-            return False
-
-    elif towerCol == 2:  # center COLUMN 2
-        findBlackTile(58 + (rowNumber * 15))
-        changeOrientation(180)
-
-        if ultrasonic() < 20:
-            return True
-        else:
-            return False
-
-    elif towerCol == 3:  # scan 45 to left COLUMN 3
-        findBlackTile(59 + (rowNumber * 15))
-        changeOrientation(180)
-
-        tankRotateLeft(30)
-        sleep(0.1)
-        tempDist = ultrasonic()
-        sleep(0.2)
-        tankRotateLeft(-30)
-        if tempDist < 20:
-            return True
-        else:
-            return False
-    else:
-        return False
-
-
-# seeks the tower by scanning each of the 3 tower tile columns, reports back the towers column
+# Seeks the tower by scanning each of the 3 tower tile columns, reports back the towers column
 def seekTower():
-    global towerCol
-    global towerDist
-
-    # scanning da tower
     for x in range(1, 4):
         announce("scanning tower column" + str(x))
         if scanColumn(x):
-            for y in range(4-failures):
+            for y in range(4-failures):  # MAY NEED TO ALTER THIS TO WORK BETTER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if scanTowerColumn(y):
                     return True
     return False
-
-
-def correct():
-    global correctionsTotal
-
-    leftDegrees=0
-    rightDegrees=0
-
-    degreeAmount = 5
-
-    for i in range(int(90 / degreeAmount)):
-        rotateDegreesLeft(degreeAmount, True)
-        if color() != 1:
-            rotateDegreesLeft(-i * degreeAmount, True)
-            leftDegrees = i * degreeAmount
-            break
-        if i == int(90 / degreeAmount)-1:
-            rotateDegreesLeft(-i * degreeAmount, True)
-            leftDegrees = i * degreeAmount
-
-    for i in range(int(90 / degreeAmount)):
-        rotateDegreesRight(degreeAmount, True)
-        if color() != 1:
-            rotateDegreesRight(-i * degreeAmount, True)
-            rightDegrees = i * degreeAmount
-            break
-        if i == (90 / degreeAmount)-1:
-            rotateDegreesRight(-i * degreeAmount, True)
-            rightDegrees = i * degreeAmount
-
-    if leftDegrees > rightDegrees and abs(leftDegrees-rightDegrees) >= 5:
-        announce("l")
-        announce("left" + str(leftDegrees))
-        announce("right" + str(rightDegrees))
-        announce("diff " + str(abs(leftDegrees-rightDegrees)))
-        if abs(leftDegrees-rightDegrees) >= 10:
-            rotateDegreesLeft(8 if orientation == 180 else 10, True)
-        else:
-            degAmount = leftDegrees - rightDegrees
-            rotateDegreesLeft(degAmount * 0.5 if orientation == 180 else degAmount, True)
-    elif rightDegrees > leftDegrees and abs(rightDegrees-leftDegrees) >= 5:
-        announce("r")
-        announce("left" + str(leftDegrees))
-        announce("right" + str(rightDegrees))
-        announce("diff " + str(abs(leftDegrees - rightDegrees)))
-        if abs(rightDegrees - leftDegrees) >= 10:
-            rotateDegreesRight(8 if orientation == 180 else 10, True)
-        else:
-            degAmount = rightDegrees - leftDegrees
-            rotateDegreesRight(degAmount * 0.5 if orientation == 180 else degAmount, True)
 
 
 # Takes 2 black/white color point checks, one further than the last, for both left and right.
@@ -385,38 +303,43 @@ def correction():
     multiplier = 1  # multiplier for orientation based corrections, 1 for 90/270, and 0.3 for 0/180
 
     if orientation == 180 or orientation == 0:  # set multiplier for orientation correctly
-        multiplier = 0.3  # needs to be less to account for further distance between black tiles
+        multiplier = 0.3  # needs to be less to account for further distance between black tiles when travelling down
 
     # check left, 2 times
     for i in range(1, 3):
         rotateDegreesLeft(searchArea / 2, True)
         if color() != 1:
             left += i  # try 1: +1, try 2: +2
-    rotateDegreesLeft(-searchArea, True)  # return to initial position
+    rotateDegreesLeft(-searchArea, True)  # return to initial position before scan
 
     # check right, 2 times
     for i in range(1, 3):
         rotateDegreesRight(searchArea / 2, True)
         if color() != 1:
             right += i  # try 1: +1, try 2: +2
-    rotateDegreesRight(-searchArea, True)  # return to initial position
+    rotateDegreesRight(-searchArea, True)  # return to initial position before scan
 
     if right > left:  # must be to the RIGHT side of a black square, TURN LEFT
         rotateDegreesLeft((5 * right) * multiplier, True)
     elif left > right:  # must be to the LEFT side of a black square, TURN RIGHT
         rotateDegreesRight((5 * left) * multiplier, True)
 
+    sleep(0.1)  # have a nice little sleep, why not
+
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
 
 # SEEK VARIABLES
-towerDist = 255
-towerCol = 0  # tower column
-failures = 0  # number of times it fails to sense the tower when searching columns
+towerDist = 255  # Distance of tower. Default set to the max 255cm.
+towerCol = 0  # Column of the tower. Default set to 0.
+failures = 0  # Counts failures to detect tower after scanning all 3 columns in the row.
 
 # CHANGEABLE VARIABLES
 orientation = 0  # 0, 90, 180, 270
 currentTileNum = 1
+scannedCol1 = False
+scannedCol2 = False
+scannedCol3 = False
 
 # OTHER VARIABLES
 degreeAmount = 0.938 / 90
@@ -435,8 +358,3 @@ for i in range(4):
     else:
         failures += 1
 announce("finished")
-
-
-"""
-
-"""
