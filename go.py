@@ -22,7 +22,7 @@ import math
 from time import sleep, time, ctime
 
 from ev3dev2.motor import LargeMotor, OUTPUT_B, OUTPUT_C, SpeedPercent, MoveTank, MoveSteering
-from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor
+from ev3dev2.sensor.lego import ColorSensor, UltrasonicSensor, TouchSensor
 from ev3dev2.sound import Sound
 
 # Initialize dictionaries
@@ -58,6 +58,7 @@ mLeft = LargeMotor(OUTPUT_B)
 mRight = LargeMotor(OUTPUT_C)
 sColor = ColorSensor()
 sSonic = UltrasonicSensor()
+sTouch = TouchSensor()
 
 steering_drive = MoveSteering(OUTPUT_B, OUTPUT_C)
 tank_drive = MoveTank(OUTPUT_B, OUTPUT_C)
@@ -72,17 +73,33 @@ def announce(string, pause=True):
     log(string)
 
 
+def motorSpeed(n):  # Alias for both motors.
+    mLeft.on(speed=n)
+    mRight.on(speed=n)
+
+
+def halt():
+    mLeft.on(0)
+    mRight.on(0)
+
+
+def goTillTouch():  # Experimental and hopefully functional!
+    motorSpeed(15)
+    sTouch.wait_for_pressed()
+    motorSpeed(0)
+
+
 def luminance(groundTuple):
     return (groundTuple[0] * 0.2126) + (groundTuple[1] * 0.7152) + (groundTuple[2] * 0.0722)
 
 
-def ultrasonic():  # returns the current ultrasonic distance
+def ultrasonic():  # Alias that calls the ultrasonic sensor. This function exists so we can change it later.
     sleep(0.125)
     n = sSonic.distance_centimeters  # Supposedly, the ultrasonic sensor locks up when checked more than 1/100ms
     return n
 
 
-def color():  # return the current color
+def color():  # Alias calling colour sensor. Wish it was sColour.colour, but y'know
     n = sColor.color
     return n
 
@@ -97,57 +114,53 @@ def routeLog(s=""):
     f.write(str(s)+", ")
     f.close()
 
-# MOVE FUNCTIONS -------------------------------------------------------------------------------------------------------
 
-
-# rotates (only) the right wheel forward, to turn left.
+# rotates right wheel forward, to turn left
 def rotateDegreesLeft(degrees, correcting=False):
-    degreeAmount = 0.94 / 90
-    mRight.on_for_rotations(SpeedPercent(20), degreeAmount * degrees)
-    if not correcting:  # ignore orientation if doing corrections, otherwise update current orientation
-        updateOrientation(degrees)
+    amount = 0.94 / 90
+    mRight.on_for_rotations(SpeedPercent(20), amount * degrees)
     sleep(0.1)
 
+    if not correcting:
+        global orientation
+        orientation -= degrees
+        if orientation < 0:
+            orientation = 360 - orientation
+        orientation = orientation % 360
 
-# rotates (only) the left wheel forward, to turn right.
+
+# rotates left wheel forward, to turn right
 def rotateDegreesRight(degrees, correcting=False):
-    degreeAmount = 0.94 / 90
-    mLeft.on_for_rotations(SpeedPercent(20), degreeAmount * degrees)
-    if not correcting:  # ignore orientation if doing corrections, otherwise update current orientation
-        updateOrientation(degrees)
+    amount = 0.94 / 90
+    mLeft.on_for_rotations(SpeedPercent(20), amount * degrees)
     sleep(0.1)
+    if not correcting:
+        global orientation
+        orientation += degrees
+        if orientation < 0:
+            orientation = 360 - orientation
+        orientation = orientation % 360
 
 
-# rotates (only) the left wheel backwards, to turn left.
+# rotates left wheel backwards, to turn left
 def reverseRotateLeft(degrees):
-    mLeft.on_for_rotations(SpeedPercent(-20), degreeAmount * degrees)
-    updateOrientation(degrees)
+    amount = 0.938 / 90
+    mLeft.on_for_rotations(SpeedPercent(-20), amount * degrees)
     sleep(0.1)
 
+    global orientation
+    orientation -= degrees
+    if orientation < 0:
+        orientation = 360 - orientation
+    orientation = orientation % 360
 
-# rotates (only) the right wheel backwards, to turn right.
+
+# rotates right wheel backwards, to turn right
 def reverseRotateRight(degrees):
-    mRight.on_for_rotations(SpeedPercent(-20), degreeAmount * degrees)
-    updateOrientation(degrees)
+    amount = 0.938 / 90
+    mRight.on_for_rotations(SpeedPercent(-20), amount * degrees)
     sleep(0.1)
 
-
-# rotates both wheels opposite, to turn left on the spot.
-def tankRotateLeft(degrees):
-    tank_drive.on_for_rotations(SpeedPercent(-20), SpeedPercent(20), degreeAmount/2 * degrees)
-    updateOrientation(degrees)
-    sleep(0.1)
-
-
-# rotates both wheels opposite, to turn right on the spot.
-def tankRotateRight(degrees):
-    tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(-20), degreeAmount/2 * degrees)
-    updateOrientation(degrees)
-    sleep(0.1)
-
-
-# used by turning methods to update current orientation.
-def updateOrientation(degrees):
     global orientation
     orientation += degrees
     if orientation < 0:
@@ -155,7 +168,33 @@ def updateOrientation(degrees):
     orientation = orientation % 360
 
 
-# rotate to move to a desired rotation, 0, 90, 180, 270.
+# rotates wheels opposite, to turn left
+def tankRotateLeft(degrees):
+    amount = (0.938 / 2) / 90
+    tank_drive.on_for_rotations(SpeedPercent(-20), SpeedPercent(20), amount * degrees)
+
+    global orientation
+    orientation -= degrees
+    if orientation < 0:
+        orientation = 360 - orientation
+    orientation = orientation % 360
+    sleep(0.1)
+
+
+# rotates wheels opposite, to turn right
+def tankRotateRight(degrees):
+    amount = (0.938 / 2) / 90
+    tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(-20), amount * degrees)
+
+    global orientation
+    orientation += degrees
+    if orientation < 0:
+        orientation = 360 - orientation
+    orientation = orientation % 360
+    sleep(0.1)
+
+
+# uses tank rotate to move to a desired rotation
 def changeOrientation(desiredOrientation):
     while orientation != desiredOrientation:
         if orientation < desiredOrientation:  # make sure we turn using the appropriate direction
@@ -170,15 +209,18 @@ def changeOrientation(desiredOrientation):
 # verifies black tiles by taking multiple point color checks, returns true if it is a black square.
 def checkIfBlackTile():
     blackSensorCheck = 0
-    for i in range(2):  # (value used to be 4)
+    for i in range(4):  # (value used to be 4)
         if color() == 1:
+            announce("ye")
             blackSensorCheck += 1
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.05)  # (used 0.08)
+        tank_drive.on_for_rotations(SpeedPercent(10), SpeedPercent(10), 0.01)  # (used 0.08)
         sleep(0.1)
 
-    if blackSensorCheck >= 2: # If 2 checks showed black, its a black square. (value used to be 4)
+    if blackSensorCheck >= 3: # If 2 checks showed black, its a black square. (value used to be 4)
+        announce("true")
         return True
     else:
+        announce("false")
         return False
 
 
@@ -190,9 +232,9 @@ def countBlackTile():
 
     while not foundBlackTile:  # while its not on a black square
         if orientation == 180:  # if robot is travelling down a column
-            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.3)  # drive forward more rotations
-        else: # else robot is travelling across a row
-            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward
+            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward more rotations
+        else:  # else robot is travelling across a row
+            tank_drive.on_for_rotations(SpeedPercent(10), SpeedPercent(10), 0.15)  # drive forward
 
         if color() != 1:
             foundWhiteAgain = True
@@ -207,7 +249,7 @@ def countBlackTile():
                 foundBlackTile = True
 
 
-# start at tile 1. If not, the math.ceil function will break # 
+# start at tile 1. If not, the math.ceil function will break #
 def findBlackTile(desiredTile):
     global currentTileNum
 
@@ -236,15 +278,15 @@ def findBlackTile(desiredTile):
                 countBlackTile()
     # announce when you find the desired tile
     if currentTileNum == desiredTile:
-        announce("TILE " + str(desiredTile))
-        announce("ROW " + math.ceil(currentTileNum / 15))
+        announce("FOUND " + str(desiredTile))
 
 
+# HAVE NOT IMPLEMENTED, BUT SHOULD HOPEFULLY WORK
 def scanColumn(columnNumber):
     global towerDist  # towers distance
     global towerCol  # towers column
 
-    failureAddition = failures * 15
+    failureAddition = failures * 15  # NEEDS TO BE FIXED!!!!!!!! GOES TO 56 ON FAILURE 2.
 
     findBlackTile(columnTiles[columnNumber] + failureAddition)
     changeOrientation(90)  # make sure its facing 90 degrees, may not be needed.
@@ -254,6 +296,7 @@ def scanColumn(columnNumber):
         rotateDegreesRight(90)  # turn right, to face down (180) to scan
         tempDist = ultrasonic()
         rotateDegreesRight(-90)  # reverse the turn
+        correction()
         if tempDist < towerDist:  # if current distance is less than the last tower distance
             towerDist = tempDist  # then update the tower variables
             towerCol = columnNumber
@@ -262,6 +305,7 @@ def scanColumn(columnNumber):
     else:  # if column 2 (with black tile in center of the big tile)
         changeOrientation(180)  # pivot to face down
         tempDist = ultrasonic()
+        #correction()
         if tempDist < towerDist:  # if current distance is less than the last tower distance
             towerDist = tempDist  # then update the tower variables
             towerCol = columnNumber
@@ -271,7 +315,7 @@ def scanColumn(columnNumber):
 
 # SCANS DOWN THE TOWERS COLUMN
 def scanTowerColumn(rowNumber):
-    if towerCol == 1:  # scan 30 to right COLUMN 1
+    if towerCol == 1:  # scan 45 to right COLUMN 1
         findBlackTile(57 + (rowNumber * 15))
         changeOrientation(180)
 
@@ -307,18 +351,20 @@ def scanTowerColumn(rowNumber):
             return True
         else:
             return False
+
     else:
         return False
 
 
 # seeks the tower by scanning each of the 3 tower tile columns, reports back the towers column
 def seekTower():
+    global foundTower
     global towerCol
     global towerDist
 
     # scanning da tower
     for x in range(1, 4):
-        announce("scanning tower column" + str(x))
+        announce("scanning column" + str(x))
         if scanColumn(x):
             for y in range(4-failures):
                 if scanTowerColumn(y):
@@ -334,6 +380,7 @@ def correct():
 
     degreeAmount = 5
 
+    # announce("scanning left")
     for i in range(int(90 / degreeAmount)):
         rotateDegreesLeft(degreeAmount, True)
         if color() != 1:
@@ -344,6 +391,7 @@ def correct():
             rotateDegreesLeft(-i * degreeAmount, True)
             leftDegrees = i * degreeAmount
 
+    # announce("scanning right")
     for i in range(int(90 / degreeAmount)):
         rotateDegreesRight(degreeAmount, True)
         if color() != 1:
@@ -353,6 +401,8 @@ def correct():
         if i == (90 / degreeAmount)-1:
             rotateDegreesRight(-i * degreeAmount, True)
             rightDegrees = i * degreeAmount
+    #announce("left scan " + str(leftDegrees))
+    #announce("right scan " + str(rightDegrees))
 
     if leftDegrees > rightDegrees and abs(leftDegrees-rightDegrees) >= 5:
         announce("l")
@@ -376,53 +426,67 @@ def correct():
             rotateDegreesRight(degAmount * 0.5 if orientation == 180 else degAmount, True)
 
 
-# Takes 2 black/white color point checks, one further than the last, for both left and right.
-# Appropriately adjusting away from the side with the most white.
 def correction():
-    searchArea = 40  # 40 degrees search
-    left = 0  # left amount counter
-    right = 0  # right amount counter
-    multiplier = 1  # multiplier for orientation based corrections, 1 for 90/270, and 0.3 for 0/180
+    searchArea = 40
+    left = 0
+    right = 0
+    multiplier = 1
 
-    if orientation == 180 or orientation == 0:  # set multiplier for orientation correctly
-        multiplier = 0.3  # needs to be less to account for further distance between black tiles
+    if orientation == 180 or orientation == 0:
+        multiplier = 0.3
 
-    # check left, 2 times
-    for i in range(1, 3):
-        rotateDegreesLeft(searchArea / 2, True)
-        if color() != 1:
-            left += i  # try 1: +1, try 2: +2
-    rotateDegreesLeft(-searchArea, True)  # return to initial position
+    rotateDegreesLeft(searchArea / 2, True)  # 1/2 check left
+    if color() != 1:
+        left += 1
+    rotateDegreesLeft(searchArea / 2, True)  # 2/2 check left
+    if color() != 1:
+        left += 2
+    rotateDegreesLeft(-searchArea, True)
 
-    # check right, 2 times
-    for i in range(1, 3):
-        rotateDegreesRight(searchArea / 2, True)
-        if color() != 1:
-            right += i  # try 1: +1, try 2: +2
-    rotateDegreesRight(-searchArea, True)  # return to initial position
+    rotateDegreesRight(searchArea / 2, True)  # 1/2 check right
+    if color() != 1:
+        right += 1
+    rotateDegreesRight(searchArea / 2, True)  # 2/2 check right
+    if color() != 1:
+        right += 2
+    rotateDegreesRight(-searchArea, True)
 
-    if right > left:  # must be to the RIGHT side of a black square, TURN LEFT
-        rotateDegreesLeft((5 * right) * multiplier, True)
-    elif left > right:  # must be to the LEFT side of a black square, TURN RIGHT
-        rotateDegreesRight((5 * left) * multiplier, True)
+    if right > left:  # must be to the left of a black square
+        if right == 1:
+            rotateDegreesLeft(5 * multiplier, True)
+        elif right == 2:
+            rotateDegreesLeft(10 * multiplier, True)
+        elif right == 3:
+            rotateDegreesLeft(15 * multiplier, True)
+
+    elif left > right:  # must be to the left of a black square
+        if left == 1:
+            rotateDegreesRight(5 * multiplier, True)
+        elif left == 2:
+            rotateDegreesRight(10 * multiplier, True)
+        elif left == 3:
+            rotateDegreesRight(15 * multiplier, True)
 
 
 # EVENT CODE -----------------------------------------------------------------------------------------------------------
 
+
 # SEEK VARIABLES
 towerDist = 255
-towerCol = 0  # tower column
-failures = 0  # number of times it fails to sense the tower when searching columns
+towerCol = 0
+failures = 0
+foundTower = False
+
 
 # CHANGEABLE VARIABLES
 orientation = 0  # 0, 90, 180, 270
 currentTileNum = 1
-
-# OTHER VARIABLES
-degreeAmount = 0.938 / 90
+correctionsTotal = 0
 
 
-# MAIN PROCESSES ---------------------------------
+# PROCESSES ---------------------------------
+
+#findBlackTile(106)
 
 # sound.play_file('start.wav')
 for i in range(4):
@@ -436,7 +500,8 @@ for i in range(4):
         failures += 1
 announce("finished")
 
+# point scans when finding tower
 
 """
-
+fffffffff
 """

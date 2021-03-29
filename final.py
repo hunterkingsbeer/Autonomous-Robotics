@@ -134,12 +134,14 @@ def updateOrientation(degrees):
 
 
 # rotate to move to a desired rotation, 0, 90, 180, 270.
-def changeOrientation(desiredOrientation):
+def changeOrientation(desiredOrientation, willCorrect = True):
     while orientation != desiredOrientation:
         if orientation < desiredOrientation:  # make sure we turn using the appropriate direction
             tankRotateRight(90)
         else:
             tankRotateLeft(90)
+    if willCorrect:
+        correction()
 
 
 # SEEKING FUNCTIONS ----------------------------------------------------------------------------------------------------
@@ -148,13 +150,14 @@ def changeOrientation(desiredOrientation):
 # verifies black tiles by taking multiple point color checks, returns true if it is a black square.
 def checkIfBlackTile():
     blackSensorCheck = 0
-    for i in range(2):  # (value used to be 4)
+    for i in range(4):  # (value used to be 4)
+        sleep(0.1)
         if color() == 1:
             blackSensorCheck += 1
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.05)  # (used 0.08)
-        sleep(0.1)
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.01)  # (used 0.08)
+        sleep(0.2)
 
-    if blackSensorCheck >= 2: # If 2 checks showed black, its a black square. (value used to be 4)
+    if blackSensorCheck >= 2:  # If 2 checks showed black, its a black square. (value used to be 4)
         return True
     else:
         return False
@@ -171,14 +174,14 @@ def countBlackTile():
             foundWhiteAgain = True
 
         if orientation == 180:  # if robot is travelling down a column
-            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.3)  # drive forward more rotations
+            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.15)  # drive forward more rotations
         else: # else robot is travelling across a row
-            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive forward
-
+            tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.1)  # drive forward
+        sleep(0.1)
         if color() == 1 and foundWhiteAgain:  # then check if its a black square, and verify
             if checkIfBlackTile():
-                correction()
                 currentTileNum += deltaTiles[orientation]
+                announce(str(currentTileNum))
                 foundBlackTile = True
 
 
@@ -209,10 +212,12 @@ def findBlackTile(desiredTile):
             elif currentTileNum < desiredTile:
                 changeOrientation(90)  # face right
                 countBlackTile()
+
+    tank_drive.on_for_rotations(SpeedPercent(15), SpeedPercent(15), 0.2)
     # announce when you find the desired tile
-    if currentTileNum == desiredTile:
-        announce("TILE " + str(desiredTile))
-        announce("ROW " + math.ceil(currentTileNum / 15))
+    #if currentTileNum == desiredTile:
+        #announce("TILE " + str(desiredTile))
+        #announce("ROW " + str(math.ceil(currentTileNum / 15)))
 
 
 # Checks if tower is within reasonable distance. Returns true if distance put in is less than 20cm, false if not.
@@ -228,13 +233,12 @@ def scanTowerColumn(rowNumber):
     if towerCol == 1:
         findBlackTile(57 + (rowNumber * 15))
         changeOrientation(180)
-
-        tankRotateRight(30)
-        #sleep(0.1)
-        tempDist = ultrasonic()
-        #sleep(0.2)
-        tankRotateRight(-30)
-        return isTower(tempDist)
+        tankRotateRight(25)
+        firstDist = ultrasonic()
+        tankRotateRight(10)
+        secondDist = ultrasonic()
+        tankRotateRight(-35)
+        return isTower(firstDist if firstDist < secondDist else secondDist)
 
     elif towerCol == 2:
         findBlackTile(58 + (rowNumber * 15))
@@ -244,13 +248,12 @@ def scanTowerColumn(rowNumber):
     elif towerCol == 3:
         findBlackTile(59 + (rowNumber * 15))
         changeOrientation(180)
-
-        tankRotateLeft(30)
-        sleep(0.1)
-        tempDist = ultrasonic()
-        sleep(0.2)
-        tankRotateLeft(-30)
-        return isTower(tempDist)
+        tankRotateLeft(25)
+        firstDist = ultrasonic()
+        tankRotateLeft(10)
+        secondDist = ultrasonic()
+        tankRotateLeft(-35)
+        return isTower(firstDist if firstDist < secondDist else secondDist)
     else:
         return False
 
@@ -268,6 +271,7 @@ def scanColumn(columnNumber):
         rotateDegreesRight(90)  # turn right, to face down (180) to scan
         tempDist = ultrasonic()
         rotateDegreesRight(-90)  # reverse the turn
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), -0.2)
         if tempDist < towerDist:  # if current distance is less than the last tower distance
             towerDist = tempDist  # then update the tower variables
             towerCol = columnNumber
@@ -288,7 +292,9 @@ def seekTower():
     for x in range(1, 4):
         announce("scanning tower column" + str(x))
         if scanColumn(x):
+            announce("found tower, dist " + str(towerDist))
             for y in range(4-failures):  # MAY NEED TO ALTER THIS TO WORK BETTER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                announce("row" + str(y))
                 if scanTowerColumn(y):
                     return True
     return False
@@ -309,6 +315,7 @@ def correction():
     for i in range(1, 3):
         rotateDegreesLeft(searchArea / 2, True)
         if color() != 1:
+            #   announce(str(i))
             left += i  # try 1: +1, try 2: +2
     rotateDegreesLeft(-searchArea, True)  # return to initial position before scan
 
@@ -316,6 +323,7 @@ def correction():
     for i in range(1, 3):
         rotateDegreesRight(searchArea / 2, True)
         if color() != 1:
+            #announce(str(i))
             right += i  # try 1: +1, try 2: +2
     rotateDegreesRight(-searchArea, True)  # return to initial position before scan
 
@@ -326,11 +334,18 @@ def correction():
 
     sleep(0.1)  # have a nice little sleep, why not
 
+def calibrate():
+    changeOrientation(180, False)
+    while color() == 1:
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.1)
+    announce("calibrate white")
+    sColor.calibrate_white()
 
-# EVENT CODE -----------------------------------------------------------------------------------------------------------
+
+    # EVENT CODE -----------------------------------------------------------------------------------------------------------
 
 # SEEK VARIABLES
-towerDist = 255  # Distance of tower. Default set to the max 255cm.
+towerDist = 200  # Distance of tower. Default set to the max 255cm.
 towerCol = 0  # Column of the tower. Default set to 0.
 failures = 0  # Counts failures to detect tower after scanning all 3 columns in the row.
 
@@ -345,8 +360,10 @@ scannedCol3 = False
 degreeAmount = 0.938 / 90
 
 
-# MAIN PROCESSES ---------------------------------
+# MAIN PROCESSES ------------------------------
 
+
+calibrate()
 # sound.play_file('start.wav')
 for i in range(4):
     if seekTower():
@@ -357,4 +374,5 @@ for i in range(4):
         break
     else:
         failures += 1
-announce("finished")
+announce("finished.")
+
