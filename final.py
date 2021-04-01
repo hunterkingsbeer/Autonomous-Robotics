@@ -54,7 +54,7 @@ def announce(string, pause=True):
 
 
 def ultrasonic():  # returns the current ultrasonic distance
-    sleep(0.125)
+    sleep(0.25)
     n = sSonic.distance_centimeters  # Supposedly, the ultrasonic sensor locks up when checked more than 1/100ms
     return n
 
@@ -134,7 +134,7 @@ def updateOrientation(degrees):
 
 
 # rotate to move to a desired rotation, 0, 90, 180, 270.
-def changeOrientation(desiredOrientation, willCorrect = True):
+def changeOrientation(desiredOrientation, willCorrect=True):
     while orientation != desiredOrientation:
         if orientation < desiredOrientation:  # make sure we turn using the appropriate direction
             tankRotateRight(90)
@@ -156,7 +156,6 @@ def checkIfBlackTile():
             blackSensorCheck += 1
         tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.01)  # (used 0.08)
         sleep(0.2)
-
     if blackSensorCheck >= 2:  # If 2 checks showed black, its a black square. (value used to be 4)
         return True
     else:
@@ -212,27 +211,22 @@ def findBlackTile(desiredTile):
             elif currentTileNum < desiredTile:
                 changeOrientation(90)  # face right
                 countBlackTile()
-
     tank_drive.on_for_rotations(SpeedPercent(15), SpeedPercent(15), 0.2)
-    # announce when you find the desired tile
-    #if currentTileNum == desiredTile:
-        #announce("TILE " + str(desiredTile))
-        #announce("ROW " + str(math.ceil(currentTileNum / 15)))
 
 
-# Checks if tower is within reasonable distance. Returns true if distance put in is less than 20cm, false if not.
+# Checks if tower is within reasonable distance. Returns true if distance put in is less than 25cm, false if not.
 def isTower(distance):
-    if distance < 20:
+    if distance < 25:
         return True
     else:
         return False
 
 
-# SCANS DOWN THE TOWERS COLUMN
-def scanTowerColumn(rowNumber):
+# SEARCHES DOWN THE TOWERS COLUMN
+def searchTowerColumn(rowNumber):
     if towerCol == 1:
         findBlackTile(57 + (rowNumber * 15))
-        changeOrientation(180)
+        changeOrientation(180, False)
         tankRotateRight(25)
         firstDist = ultrasonic()
         tankRotateRight(10)
@@ -242,12 +236,12 @@ def scanTowerColumn(rowNumber):
 
     elif towerCol == 2:
         findBlackTile(58 + (rowNumber * 15))
-        changeOrientation(180)
+        changeOrientation(180, False)
         return isTower(ultrasonic())
 
     elif towerCol == 3:
         findBlackTile(59 + (rowNumber * 15))
-        changeOrientation(180)
+        changeOrientation(180, False)
         tankRotateLeft(25)
         firstDist = ultrasonic()
         tankRotateLeft(10)
@@ -257,6 +251,7 @@ def scanTowerColumn(rowNumber):
     else:
         return False
 
+
 # searches down column to look for the
 def scanColumn(columnNumber):
     global towerDist  # towers distance
@@ -264,10 +259,11 @@ def scanColumn(columnNumber):
     failureAddition = failures * 15  # num of failures = row to scanning, use this to get its failure addition
 
     findBlackTile(columnTiles[columnNumber] + failureAddition)
-    changeOrientation(90)  # make sure its facing 90 degrees, may not be needed.
+    if orientation != 90:
+        changeOrientation(90)
 
     if columnNumber != 2:  # if column 1 or 3 (with 2 black tiles on the edge of the big tile)
-        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)  # drive to center of tile
+        tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.25)  # drive to center of tile
         rotateDegreesRight(90)  # turn right, to face down (180) to scan
         tempDist = ultrasonic()
         rotateDegreesRight(-90)  # reverse the turn
@@ -278,7 +274,7 @@ def scanColumn(columnNumber):
             return True
 
     else:  # if column 2 (with black tile in center of the big tile)
-        changeOrientation(180)  # pivot to face down
+        changeOrientation(180, False)  # pivot to face down
         tempDist = ultrasonic()
         if tempDist < towerDist:  # if current distance is less than the last tower distance
             towerDist = tempDist  # then update the tower variables
@@ -290,13 +286,13 @@ def scanColumn(columnNumber):
 # Seeks the tower by scanning each of the 3 tower tile columns, reports back the towers column
 def seekTower():
     for x in range(1, 4):
-        announce("scanning tower column" + str(x))
         if scanColumn(x):
-            announce("found tower, dist " + str(towerDist))
-            for y in range(4-failures):  # MAY NEED TO ALTER THIS TO WORK BETTER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                announce("row" + str(y))
-                if scanTowerColumn(y):
+            announce("possible tower, dist " + str(towerDist))
+            for y in range(4-failures):
+                if searchTowerColumn(y):
+                    announce("Found Tower.")
                     return True
+                correction()
     return False
 
 
@@ -315,7 +311,6 @@ def correction():
     for i in range(1, 3):
         rotateDegreesLeft(searchArea / 2, True)
         if color() == 6:
-            #   announce(str(i))
             left += i  # try 1: +1, try 2: +2
     rotateDegreesLeft(-searchArea, True)  # return to initial position before scan
 
@@ -323,7 +318,6 @@ def correction():
     for i in range(1, 3):
         rotateDegreesRight(searchArea / 2, True)
         if color() == 6:
-            #announce(str(i))
             right += i  # try 1: +1, try 2: +2
     rotateDegreesRight(-searchArea, True)  # return to initial position before scan
 
@@ -334,6 +328,8 @@ def correction():
 
     sleep(0.1)  # have a nice little sleep, why not
 
+
+# assumes robot starts on black sheet, turns and drives until off the black sheet, then calibrates the sensor
 def calibrate():
     changeOrientation(180, False)
     while color() == 1:
@@ -342,7 +338,7 @@ def calibrate():
     sColor.calibrate_white()
 
 
-    # EVENT CODE -----------------------------------------------------------------------------------------------------------
+# EVENT CODE -----------------------------------------------------------------------------------------------------------
 
 # SEEK VARIABLES
 towerDist = 200  # Distance of tower. Default set to the max 255cm.
@@ -367,12 +363,10 @@ calibrate()
 # sound.play_file('start.wav')
 for i in range(4):
     if seekTower():
-        announce("fantastic")
+        announce("finished.")
         announce("tile " + str(keyTiles[currentTileNum]))
         announce("column " + str(towerCol))
         # sound.play_file('victory.wav')
         break
     else:
         failures += 1
-announce("finished.")
-
