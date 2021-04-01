@@ -135,13 +135,13 @@ def updateOrientation(degrees):
 
 # rotate to move to a desired rotation, 0, 90, 180, 270.
 def changeOrientation(desiredOrientation, willCorrect=True):
+    if willCorrect and currentTileNum != 1:
+        correction()
     while orientation != desiredOrientation:
         if orientation < desiredOrientation:  # make sure we turn using the appropriate direction
             tankRotateRight(90)
         else:
             tankRotateLeft(90)
-    if willCorrect and currentTileNum != 1:
-        correction()
 
 
 # SEEKING FUNCTIONS ----------------------------------------------------------------------------------------------------
@@ -305,9 +305,9 @@ def correction():
     multiplier = 1  # multiplier for orientation based corrections, 1 for 90/270, and 0.3 for 0/180
 
     if orientation == 180 or orientation == 0:  # set multiplier for orientation correctly
-        multiplier = 0.3  # needs to be less to account for further distance between black tiles when travelling down
+        multiplier = 0.35  # needs to be less to account for further distance between black tiles when travelling down
 
-    tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.15)
+    tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.2)
 
     # check left, 2 times
     for i in range(1, 3):
@@ -362,9 +362,9 @@ calibrate()
 # sound.play_file('start.wav')
 for i in range(4):
     if seekTower():
-        announce("finished.")
         announce("tile " + str(keyTiles[currentTileNum]))
         announce("column " + str(towerCol))
+        announce("finished.")
         # sound.play_file('victory.wav')
         break
     else:
