@@ -140,7 +140,7 @@ def changeOrientation(desiredOrientation, willCorrect=True):
             tankRotateRight(90)
         else:
             tankRotateLeft(90)
-    if willCorrect:
+    if willCorrect and currentTileNum != 1:
         correction()
 
 
@@ -299,13 +299,15 @@ def seekTower():
 # Takes 2 black/white color point checks, one further than the last, for both left and right.
 # Appropriately adjusting away from the side with the most white.
 def correction():
-    searchArea = 40  # 40 degrees search
+    searchArea = 50  # 50 degrees search
     left = 0  # left amount counter
     right = 0  # right amount counter
     multiplier = 1  # multiplier for orientation based corrections, 1 for 90/270, and 0.3 for 0/180
 
     if orientation == 180 or orientation == 0:  # set multiplier for orientation correctly
-        multiplier = 0.25  # needs to be less to account for further distance between black tiles when travelling down
+        multiplier = 0.3  # needs to be less to account for further distance between black tiles when travelling down
+
+    tank_drive.on_for_rotations(SpeedPercent(20), SpeedPercent(20), 0.15)
 
     # check left, 2 times
     for i in range(1, 3):
@@ -348,9 +350,6 @@ failures = 0  # Counts failures to detect tower after scanning all 3 columns in 
 # CHANGEABLE VARIABLES
 orientation = 0  # 0, 90, 180, 270
 currentTileNum = 1
-scannedCol1 = False
-scannedCol2 = False
-scannedCol3 = False
 
 # OTHER VARIABLES
 degreeAmount = 0.938 / 90
