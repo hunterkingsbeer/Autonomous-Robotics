@@ -1,4 +1,4 @@
-# Autonomous-Robot
+# Autonomous-Robotics
 
 COSC343 AI Assignment 1
 
